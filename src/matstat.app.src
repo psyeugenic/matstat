@@ -1,0 +1,13 @@
+%%-*- mode: erlang -*-
+{application, matstat,
+ [
+  {description, "matstat"},
+  {vsn, "1"},
+  {modules, [matstat
+  ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]}
+ ]}.
