@@ -24,6 +24,7 @@ I have two aspects of this:
 * `tvar([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed variance
 * `tstd([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed sample standard deviation 
 * `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
+* `tsem([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed standard error of the mean
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -31,7 +32,6 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* tsem(a[, limits, inclusive]) - Compute the trimmed standard error of the mean
 * linregress(x[, y]) - Calculate a regression line
 * histogram2(a, bins) - Compute histogram using divisions in bins.
 * histogram(a[, numbins, defaultlimits, ...]) - Separates the range into several bins and returns the number of instances of a in each bin.

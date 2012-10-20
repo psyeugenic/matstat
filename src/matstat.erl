@@ -24,6 +24,7 @@
 	tmax/1, tmax/2,
 	tvar/1, tvar/2,
 	tstd/1, tstd/2,
+	tsem/1, tsem/2,
 	gmean/1,
 	hmean/1,
 	cmedian/1
@@ -79,6 +80,31 @@ tmax([_|Is], Limit, Max) ->
 tmax([], _, Max) ->
     Max.
 
+-spec tvar([number()]) -> float().
+-spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+tvar(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
+tvar(Vs, Limit) ->
+    {Sum,SumSqr,N} = sum_sumsqr_n(Vs, Limit, 0.0, 0.0, 0),
+    (SumSqr - Sum*Sum/N)/(N - 1).
+
+-spec tstd([number()]) -> float().
+-spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+tstd(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
+tstd(Vs, Limit) ->
+    math:sqrt(tvar(Vs, Limit)).
+
+-spec tsem([number()]) -> float().
+-spec tsem([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+tsem(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
+tsem(Vs, Limit) ->
+    {Sum,SumSqr,N} = sum_sumsqr_n(Vs, Limit, 0.0, 0.0, 0),
+    math:sqrt(((SumSqr - Sum*Sum/N)/(N - 1))/N).
+    
+
+
 -spec gmean([number()]) -> float().
 
 %% Calculate nth root of (x1 * x2 * .. * xn)
@@ -129,26 +155,15 @@ ltail([_|R], N) when N > 0 -> ltail(R, N - 1);
 ltail(R, 0) -> R.
 
 
--spec tvar([number()]) -> float().
--spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
-
-tvar(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
-tvar(Vs, Limit) -> tvar(Vs, Limit, 0.0, 0.0, 0).
-tvar([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
+sum_sumsqr_n([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
 					(Ll =:= ?nolimit orelse V >= Ll),
 					(Ul =:= ?nolimit orelse V =< Ul) ->
-    tvar(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
-tvar([_|Vs], Ls, Sum, SumSqr, N) ->
-    tvar(Vs, Ls, Sum, SumSqr, N);
-tvar([], _, Sum, SumSqr, N) ->
-    (SumSqr - Sum*Sum/N)/(N - 1).
+    sum_sumsqr_n(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
+sum_sumsqr_n([_|Vs], Ls, Sum, SumSqr, N) ->
+    sum_sumsqr_n(Vs, Ls, Sum, SumSqr, N);
+sum_sumsqr_n([], _, Sum, SumSqr, N) ->
+    {Sum, SumSqr, N}.
 
--spec tstd([number()]) -> float().
--spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
-
-tstd(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
-tstd(Vs, Limit) ->
-    math:sqrt(tvar(Vs, Limit)).
 
 %% old thinking
 msn([])  -> {0, 0}; 

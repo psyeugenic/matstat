@@ -19,6 +19,7 @@
 	mean/1,
 	tmin/1,tmax/1,
 	tstd/1, tvar/1,
+	tsem/1,
 	hmean/1,
 	gmean/1,
 	cmedian/1
@@ -36,6 +37,7 @@ all() ->
 	hmean, gmean,
 	tmin,tmax,
 	tvar, tstd,
+	tsem,
 	cmedian
 ].
 
@@ -109,8 +111,20 @@ tstd(_Config) ->
     ok   = ?equal(45.92, matstat:tstd(Set1,{inf,inf})),
     Set2 = [33,36,73.0, 93.3, 183.7, 86.6, 77.3, 203, 204],
     ok   = ?equal(45.92, matstat:tstd(Set2,{40,200})),
+    Set3 = [9,2,1],
+    ok   = ?equal(4.36, matstat:tstd(Set3)),
+    Set4 = [6,6,8,8,3,8],
+    ok   = ?equal(1.97, matstat:tstd(Set4)),
     ok.
 
+tsem(_Config) ->
+    Set1 = [9,2,1],
+    ok   = ?equal(2.52, matstat:tsem(Set1)),
+    Set2 = [6,6,8,8,3,8],
+    ok   = ?equal(0.81, matstat:tsem(Set2)),
+    Set3 = [1,2,1,10,11,-1,-1.0] ++ Set2,
+    ok   = ?equal(0.81, matstat:tsem(Set3, {3,9})),
+    ok.
 
 cmedian(_Config) ->
     Set1 = [1,2,3,4,5],
