@@ -14,12 +14,11 @@ I have two aspects of this:
 
 ### Done ###
 
-* `mean/1 -> Mean :: float()` - calculate the mean of list of numbers,
 * `msn/1 -> {Mean :: float(), StdDev :: float()}` - calculate mean and *sampled* standard deviation,
-
+* `mean/1 -> Mean :: float()` - calculate the mean of list of numbers,
 * `tmean([number()], {'inf' | Ll :: number(), 'inf' | Ul :: number()}) -> Mean :: float()` - Compute the trimmed mean
 * `gmean([number()]) -> Mean :: float()` - Compute the geometric mean along the specified axis.
-  "nth root of (x1 * x2 * .. * xn)"
+* `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -27,9 +26,6 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
-  hmean(a[, axis, dtype])
-  "n / (1/x1 + 1/x2 + ... + 1/xn)"
 * tmin(a[, lowerlimit, axis, inclusive]) - Compute the trimmed minimum
 * tmax(a, upperlimit[, axis, inclusive]) - Compute the trimmed maximum
 * tstd(a[, limits, inclusive]) - Compute the trimmed sample standard deviation

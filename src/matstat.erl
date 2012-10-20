@@ -20,7 +20,8 @@
 
 -export([
 	tmean/1, tmean/2,
-	gmean/1
+	gmean/1,
+	hmean/1
     ]).
 
 -spec mean([number()]) -> float().
@@ -47,6 +48,20 @@ gmean([I|Is], P, N) when is_number(I) ->
     gmean(Is, P*I, N + 1);
 gmean([], P, N) ->
     math:pow(P, 1/N).
+
+
+-spec hmean([number()]) -> float().
+
+%% Calculate n / (1/x1 + 1/x2 + .. + 1/xn)
+%% FIXME: zero numbers?
+hmean(Is) -> hmean(Is, 0, 0).
+hmean([I|Is], S, N) when is_number(I), I =/= 0 ->
+    hmean(Is, S + (1/I), N + 1);
+hmean([_|Is], S, N) ->
+    hmean(Is, S, N);
+hmean([], S, N) ->
+    N / S.
+
 
 
 

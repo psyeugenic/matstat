@@ -17,6 +17,7 @@
 -export([
 	mean/1,
 	mean_stddev/1,
+	hmean/1,
 	gmean/1
     ]).
 
@@ -28,8 +29,11 @@ end_per_suite(Config) when is_list(Config) ->
 
 
 all() ->
-    [mean, mean_stddev,
-    gmean].
+    [
+	mean, mean_stddev,
+	hmean,
+	gmean
+].
 
 -define(err, (0.00005)).
 -define(equal(A,B), if erlang:abs(A-B) < ?err -> ok; true -> {A,B} end).
@@ -55,4 +59,9 @@ gmean(_Config) ->
     Set = [1.8, 1.16666, 1.428571],
     M   = matstat:gmean(Set),
     ok  = ?equal(1.442249, M).
+
+hmean(_Config) ->
+    Set = [1,2,4],
+    M   = matstat:hmean(Set),
+    ok  = ?equal(12/7, M).
 
