@@ -16,7 +16,8 @@
 %% Test cases
 -export([
 	mean/1,
-	mean_stddev/1
+	mean_stddev/1,
+	gmean/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -27,9 +28,10 @@ end_per_suite(Config) when is_list(Config) ->
 
 
 all() ->
-    [mean, mean_stddev].
+    [mean, mean_stddev,
+    gmean].
 
--define(err, (0.0005)).
+-define(err, (0.00005)).
 -define(equal(A,B), if erlang:abs(A-B) < ?err -> ok; true -> {A,B} end).
 
 %%----------------------------------------------------------------------
@@ -48,4 +50,9 @@ mean_stddev(_Config) ->
     {M,S} = matstat:msn(Set),
     ok    = ?equal(120, M),
     ok    = ?equal(19.1311, S).
+
+gmean(_Config) ->
+    Set = [1.8, 1.16666, 1.428571],
+    M   = matstat:gmean(Set),
+    ok  = ?equal(1.442249, M).
 

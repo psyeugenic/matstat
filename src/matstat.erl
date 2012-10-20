@@ -18,13 +18,39 @@
 	corr/2
     ]).
 
+-export([
+	tmean/1, tmean/2,
+	gmean/1
+    ]).
 
-mean(Vs) -> mean(Vs, 0, 0).
+-spec mean([number()]) -> float().
+-spec tmean([number()]) -> float().
+-spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
 
-mean([], N, Sum) -> Sum/N;
-mean([V|Vs], N, Sum) -> mean(Vs, N + 1, Sum + V).
+mean(Is) -> tmean(Is, {inf, inf}).
+tmean(Is) -> tmean(Is, {inf, inf}).
+tmean(Is, Limit) -> tmean(Is, Limit, 0, 0).
+tmean([I|Is], {Ll, Ul} = Ls, S, N) when is_number(I), (Ll =:= inf orelse I >= Ll), (Ul =:= inf orelse I =< Ul) ->
+    tmean(Is, Ls, S + I, N + 1);
+tmean([_|Is], Ls, S, N) ->
+    tmean(Is, Ls, S, N);
+tmean([], _, 0, 0) -> 0.0;
+tmean([], _, S, N) -> S/N.
 
 
+-spec gmean([number()]) -> float().
+
+%% Calculate nth root of (x1 * x2 * .. * xn)
+gmean([I|Is]) when is_number(I) ->
+    gmean(Is, I, 1).
+gmean([I|Is], P, N) when is_number(I) ->
+    gmean(Is, P*I, N + 1);
+gmean([], P, N) ->
+    math:pow(P, 1/N).
+
+
+
+%% old thinking
 msn([])  -> {0, 0}; 
 msn([V]) -> {V, 0.0};
 msn(Vs)  -> msn(Vs, 0, 0, 0).
