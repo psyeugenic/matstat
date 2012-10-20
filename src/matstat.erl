@@ -90,9 +90,9 @@ gmean([], P, N) ->
 -spec hmean([number()]) -> float().
 
 %% Calculate n / (1/x1 + 1/x2 + .. + 1/xn)
-%% FIXME: zero numbers?
+%% x1 .. Xn > 0.0 (positive real numbers)
 hmean(Is) -> hmean(Is, 0, 0).
-hmean([I|Is], S, N) when is_number(I), I =/= 0 ->
+hmean([I|Is], S, N) when is_number(I), I > 0 ->
     hmean(Is, S + (1/I), N + 1);
 hmean([_|Is], S, N) ->
     hmean(Is, S, N);
