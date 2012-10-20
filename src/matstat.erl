@@ -20,24 +20,61 @@
 
 -export([
 	tmean/1, tmean/2,
+	tmin/1, tmin/2,
+	tmax/1, tmax/2,
 	gmean/1,
 	hmean/1
     ]).
+
+-define(nolimit, inf).
 
 -spec mean([number()]) -> float().
 -spec tmean([number()]) -> float().
 -spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
 
-mean(Is) -> tmean(Is, {inf, inf}).
-tmean(Is) -> tmean(Is, {inf, inf}).
+mean(Is) -> tmean(Is, {?nolimit, ?nolimit}).
+tmean(Is) -> tmean(Is, {?nolimit, ?nolimit}).
 tmean(Is, Limit) -> tmean(Is, Limit, 0, 0).
-tmean([I|Is], {Ll, Ul} = Ls, S, N) when is_number(I), (Ll =:= inf orelse I >= Ll), (Ul =:= inf orelse I =< Ul) ->
+tmean([I|Is], {Ll, Ul} = Ls, S, N) when is_number(I),
+					(Ll =:= ?nolimit orelse I >= Ll),
+					(Ul =:= ?nolimit orelse I =< Ul) ->
     tmean(Is, Ls, S + I, N + 1);
 tmean([_|Is], Ls, S, N) ->
     tmean(Is, Ls, S, N);
 tmean([], _, 0, 0) -> 0.0;
 tmean([], _, S, N) -> S/N.
 
+-spec tmin([number()]) -> number().
+-spec tmin([number()], 'inf' | number()) -> number().
+
+tmin(Is) -> tmin(Is, ?nolimit).
+tmin([I|Is], Limit) when I >= Limit; Limit =:= ?nolimit ->
+    tmin(Is, Limit, I);
+tmin([_|Is], Limit) -> 
+    tmin(Is, Limit).
+
+tmin([I|Is], Limit, Min) when I < Min andalso (I >= Limit orelse Limit =:= ?nolimit) ->
+    tmin(Is, Limit, I);
+tmin([_|Is], Limit, Min) ->
+    tmin(Is, Limit, Min);
+tmin([], _, Min) ->
+    Min.
+
+-spec tmax([number()]) -> number().
+-spec tmax([number()], 'inf' | number()) -> number().
+
+tmax(Is) -> tmax(Is, ?nolimit).
+tmax([I|Is], Limit) when I =< Limit; Limit =:= ?nolimit ->
+    tmax(Is, Limit, I);
+tmax([_|Is], Limit) -> 
+    tmax(Is, Limit).
+
+tmax([I|Is], Limit, Max) when I > Max andalso (I =< Limit orelse Limit =:= ?nolimit) ->
+    tmax(Is, Limit, I);
+tmax([_|Is], Limit, Max) ->
+    tmax(Is, Limit, Max);
+tmax([], _, Max) ->
+    Max.
 
 -spec gmean([number()]) -> float().
 

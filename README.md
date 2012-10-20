@@ -19,6 +19,8 @@ I have two aspects of this:
 * `tmean([number()], {'inf' | Ll :: number(), 'inf' | Ul :: number()}) -> Mean :: float()` - Compute the trimmed mean
 * `gmean([number()]) -> Mean :: float()` - Compute the geometric mean along the specified axis.
 * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
+* `tmin([number()], 'inf' | number()) -> number()` - Compute the trimmed minimum
+* `tmax([number()], 'inf' | number()) -> number()` - Compute the trimmed maximum
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -26,13 +28,10 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* tmin(a[, lowerlimit, axis, inclusive]) - Compute the trimmed minimum
-* tmax(a, upperlimit[, axis, inclusive]) - Compute the trimmed maximum
 * tstd(a[, limits, inclusive]) - Compute the trimmed sample standard deviation
 * tvar(a[, limits, inclusive]) - Compute the trimmed variance
 * tsem(a[, limits, inclusive]) - Compute the trimmed standard error of the mean
 * linregress(x[, y]) - Calculate a regression line
-
 * cmedian(a[, numbins]) - Returns the computed median value of an array.
 * histogram2(a, bins) - Compute histogram using divisions in bins.
 * histogram(a[, numbins, defaultlimits, ...]) - Separates the range into several bins and returns the number of instances of a in each bin.

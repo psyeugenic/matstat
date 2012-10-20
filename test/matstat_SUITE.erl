@@ -35,8 +35,11 @@ all() ->
 	gmean
 ].
 
--define(err, (0.00005)).
--define(equal(A,B), if erlang:abs(A-B) < ?err -> ok; true -> {A,B} end).
+-define(err, (0.005)).
+-define(equal(A,B), equal(A,B)).
+
+equal(A,B) when abs(A-B) < ?err -> ok;
+equal(A,B) -> {A,B}.
 
 %%----------------------------------------------------------------------
 %% Tests
@@ -53,7 +56,8 @@ mean_stddev(_Config) ->
     Set   = [96, 104, 126, 134, 140],
     {M,S} = matstat:msn(Set),
     ok    = ?equal(120, M),
-    ok    = ?equal(19.1311, S).
+    ok    = ?equal(19.1311, S),
+    ok.
 
 gmean(_Config) ->
     Set = [1.8, 1.16666, 1.428571],
@@ -64,4 +68,26 @@ hmean(_Config) ->
     Set = [1,2,4],
     M   = matstat:hmean(Set),
     ok  = ?equal(12/7, M).
+
+tmin(_Config) ->
+    Set1 = [1,2,3,4,5],
+    ok   = ?equal(1, matstat:tmin(Set1)),
+    ok   = ?equal(3, matstat:tmin(Set1, 3)),
+    Set2 = [2, -1.0, -1.1, 0, 1, 2],
+    ok   = ?equal(-1.0, matstat:tmin(Set2)),
+    Set3 = [10,-9,8,-3,1,3,4,5,3],
+    ok   = ?equal(-9, matstat:tmin(Set3)),
+    ok   = ?equal(-3, matstat:tmin(Set3, -5)),
+    ok.
+
+tmax(_Config) ->
+    Set1 = [1,2,3,4,5],
+    ok   = ?equal(5, matstat:tmax(Set1)),
+    ok   = ?equal(3, matstat:tmax(Set1,3)),
+    Set2 = [2, -1.0, -1.1, 0, 1, 2],
+    ok   = ?equal(2, matstat:tmax(Set2)),
+    Set3 = [10,-9,8,-3,1,3,4,5,3],
+    ok   = ?equal(10, matstat:tmax(Set3)),
+    ok   = ?equal(-3, matstat:tmax(Set3, -2)),
+    ok.
 
