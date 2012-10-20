@@ -21,6 +21,8 @@ I have two aspects of this:
 * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
 * `tmin([number()], 'inf' | number()) -> number()` - Compute the trimmed minimum
 * `tmax([number()], 'inf' | number()) -> number()` - Compute the trimmed maximum
+* `tvar([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed variance
+* `tstd([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed sample standard deviation 
 * `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
 
 Function list from SciPy.stats Statistical Functions.
@@ -29,8 +31,6 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* tstd(a[, limits, inclusive]) - Compute the trimmed sample standard deviation
-* tvar(a[, limits, inclusive]) - Compute the trimmed variance
 * tsem(a[, limits, inclusive]) - Compute the trimmed standard error of the mean
 * linregress(x[, y]) - Calculate a regression line
 * histogram2(a, bins) - Compute histogram using divisions in bins.

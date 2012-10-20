@@ -22,6 +22,8 @@
 	tmean/1, tmean/2,
 	tmin/1, tmin/2,
 	tmax/1, tmax/2,
+	tvar/1, tvar/2,
+	tstd/1, tstd/2,
 	gmean/1,
 	hmean/1,
 	cmedian/1
@@ -101,6 +103,7 @@ hmean([], S, N) ->
     N / S.
 
 
+
 -spec cmedian([number()]) -> number().
 
 %% I think this should be implemented with histogram
@@ -124,6 +127,28 @@ cmedian(Is) ->
 
 ltail([_|R], N) when N > 0 -> ltail(R, N - 1);
 ltail(R, 0) -> R.
+
+
+-spec tvar([number()]) -> float().
+-spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+tvar(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
+tvar(Vs, Limit) -> tvar(Vs, Limit, 0.0, 0.0, 0).
+tvar([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
+					(Ll =:= ?nolimit orelse V >= Ll),
+					(Ul =:= ?nolimit orelse V =< Ul) ->
+    tvar(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
+tvar([_|Vs], Ls, Sum, SumSqr, N) ->
+    tvar(Vs, Ls, Sum, SumSqr, N);
+tvar([], _, Sum, SumSqr, N) ->
+    (SumSqr - Sum*Sum/N)/(N - 1).
+
+-spec tstd([number()]) -> float().
+-spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+tstd(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
+tstd(Vs, Limit) ->
+    math:sqrt(tvar(Vs, Limit)).
 
 %% old thinking
 msn([])  -> {0, 0}; 

@@ -18,6 +18,7 @@
 	mean_stddev/1,
 	mean/1,
 	tmin/1,tmax/1,
+	tstd/1, tvar/1,
 	hmean/1,
 	gmean/1,
 	cmedian/1
@@ -29,13 +30,12 @@ init_per_suite(Config) when is_list(Config) ->
 end_per_suite(Config) when is_list(Config) ->
     ok.
 
-
 all() ->
     [
 	mean, mean_stddev,
-	hmean,
-	gmean,
+	hmean, gmean,
 	tmin,tmax,
+	tvar, tstd,
 	cmedian
 ].
 
@@ -94,6 +94,23 @@ tmax(_Config) ->
     ok   = ?equal(10, matstat:tmax(Set3)),
     ok   = ?equal(-3, matstat:tmax(Set3, -2)),
     ok.
+
+tvar(_Config) ->
+    Set1 = lists:flatten([[1,2,3,4,5,6] || _ <- [1,2,3,4,5]]),
+    ok   = ?equal(3.0172, matstat:tvar(Set1)),
+    Set2 = [0,-1,-3,7,8,9] ++ Set1,
+    ok   = ?equal(3.0172, matstat:tvar(Set2, {1,6})),
+    ok.
+
+
+tstd(_Config) ->
+    Set1 = [73.0, 93.3, 183.7, 86.6, 77.3],
+    ok   = ?equal(45.92, matstat:tstd(Set1)),
+    ok   = ?equal(45.92, matstat:tstd(Set1,{inf,inf})),
+    Set2 = [33,36,73.0, 93.3, 183.7, 86.6, 77.3, 203, 204],
+    ok   = ?equal(45.92, matstat:tstd(Set2,{40,200})),
+    ok.
+
 
 cmedian(_Config) ->
     Set1 = [1,2,3,4,5],
