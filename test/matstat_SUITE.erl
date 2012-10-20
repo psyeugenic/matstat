@@ -15,10 +15,12 @@
 
 %% Test cases
 -export([
-	mean/1,
 	mean_stddev/1,
+	mean/1,
+	tmin/1,tmax/1,
 	hmean/1,
-	gmean/1
+	gmean/1,
+	cmedian/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -32,7 +34,9 @@ all() ->
     [
 	mean, mean_stddev,
 	hmean,
-	gmean
+	gmean,
+	tmin,tmax,
+	cmedian
 ].
 
 -define(err, (0.005)).
@@ -74,7 +78,7 @@ tmin(_Config) ->
     ok   = ?equal(1, matstat:tmin(Set1)),
     ok   = ?equal(3, matstat:tmin(Set1, 3)),
     Set2 = [2, -1.0, -1.1, 0, 1, 2],
-    ok   = ?equal(-1.0, matstat:tmin(Set2)),
+    ok   = ?equal(-1.0, matstat:tmin(Set2, -1)),
     Set3 = [10,-9,8,-3,1,3,4,5,3],
     ok   = ?equal(-9, matstat:tmin(Set3)),
     ok   = ?equal(-3, matstat:tmin(Set3, -5)),
@@ -89,5 +93,14 @@ tmax(_Config) ->
     Set3 = [10,-9,8,-3,1,3,4,5,3],
     ok   = ?equal(10, matstat:tmax(Set3)),
     ok   = ?equal(-3, matstat:tmax(Set3, -2)),
+    ok.
+
+cmedian(_Config) ->
+    Set1 = [1,2,3,4,5],
+    ok   = ?equal(3, matstat:cmedian(Set1)),
+    Set2 = [2, -1.0, -1.1, 0, 1, 2],
+    ok   = ?equal(0.5, matstat:cmedian(Set2)),
+    Set3 = [10,-9,8,-3,1,3,4,5,3],
+    ok   = ?equal(3, matstat:cmedian(Set3)),
     ok.
 

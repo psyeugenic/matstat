@@ -23,7 +23,8 @@
 	tmin/1, tmin/2,
 	tmax/1, tmax/2,
 	gmean/1,
-	hmean/1
+	hmean/1,
+	cmedian/1
     ]).
 
 -define(nolimit, inf).
@@ -100,7 +101,29 @@ hmean([], S, N) ->
     N / S.
 
 
+-spec cmedian([number()]) -> number().
 
+%% I think this should be implemented with histogram
+%% could probably be done in k*O(n) instead of O(n * log n)
+
+%% median
+%% odd -> Xm
+%% even -> (Xm_-1 + Xm_+1)/2
+cmedian(Is) ->
+    Ls = lists:sort(Is),
+    N  = length(Ls),
+    H  = N div 2,
+    case N rem 2 of
+	1 -> % odd
+	    [I|_] = ltail(Ls, H),
+	    I;
+	0 -> % even
+	    [I0,I1|_] = ltail(Ls, H - 1),
+	    (I0 + I1) / 2
+    end.
+
+ltail([_|R], N) when N > 0 -> ltail(R, N - 1);
+ltail(R, 0) -> R.
 
 %% old thinking
 msn([])  -> {0, 0}; 
