@@ -22,7 +22,8 @@
 	tsem/1,
 	hmean/1,
 	gmean/1,
-	cmedian/1
+	cmedian/1,
+	linregress/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -38,7 +39,8 @@ all() ->
 	tmin,tmax,
 	tvar, tstd,
 	tsem,
-	cmedian
+	cmedian,
+	linregress
 ].
 
 -define(err, (0.005)).
@@ -133,5 +135,14 @@ cmedian(_Config) ->
     ok   = ?equal(0.5, matstat:cmedian(Set2)),
     Set3 = [10,-9,8,-3,1,3,4,5,3],
     ok   = ?equal(3, matstat:cmedian(Set3)),
+    ok.
+
+linregress(_Config) ->
+    Set1 = [{95,214},{82,152},{90,156},{81,129},{99,254},{100,266},
+	{93,210},{95,204},{93,213},{87,150}],
+    {{Slope, Intercept}, R2} = matstat:linregress(Set1),
+    ok   = ?equal(6.7175, Slope),
+    ok   = ?equal(-419.85, Intercept),
+    ok   = ?equal(0.89, R2),
     ok.
 

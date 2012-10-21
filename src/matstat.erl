@@ -27,7 +27,8 @@
 	tsem/1, tsem/2,
 	gmean/1,
 	hmean/1,
-	cmedian/1
+	cmedian/1,
+	linregress/1
     ]).
 
 -define(nolimit, inf).
@@ -129,6 +130,33 @@ hmean([], S, N) ->
     N / S.
 
 
+-spec linregress([{X :: number(), Y :: number()}]) ->
+    {{Slope :: float(), Intercept :: float()}, {RSQ :: float(), StdDev :: float()}}.
+
+%% Fix P-Value and what exact standard error really is?
+linregress(Vs) ->
+    {SumX, SumY, SumXY, SumX2, SumY2, N} = sum_x_y_xy_x2_y2_n(Vs),
+    SSXY  = SumXY - SumX*SumY/N,
+    SSXX  = SumX2 - SumX*SumX/N,
+    Slope = SSXY/SSXX,
+    Incpt = SumY/N - Slope*SumX/N,
+    % error estimation
+    SSYY  = SumY2 - SumY*SumY/N,
+    SSE   = SSYY - Slope*SSXY,
+    R2    = (SSYY - SSE)/SSYY,
+    _SD    = if
+	N > 2 -> math:sqrt(SSE/(N - 2));
+	true -> 0.0
+    end,
+    {{Slope, Incpt}, R2}.
+
+sum_x_y_xy_x2_y2_n(Vs) -> 
+    sum_x_y_xy_x2_y2_n(Vs, 0, 0, 0, 0, 0, 0).
+
+sum_x_y_xy_x2_y2_n([{X,Y}|Vs], SumX, SumY, SumXY, SumX2, SumY2, N) when is_number(X), is_number(Y) ->
+    sum_x_y_xy_x2_y2_n(Vs, SumX + X, SumY + Y, SumXY + X*Y, SumX2 + X*X, SumY2 + Y*Y, N + 1);
+sum_x_y_xy_x2_y2_n([], SumX, SumY, SumXY, SumX2, SumY2, N) ->
+    {SumX, SumY, SumXY, SumX2, SumY2, N}.
 
 -spec cmedian([number()]) -> number().
 

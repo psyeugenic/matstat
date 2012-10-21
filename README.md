@@ -16,15 +16,16 @@ I have two aspects of this:
 
 * `msn/1 -> {Mean :: float(), StdDev :: float()}` - calculate mean and *sampled* standard deviation,
 * `mean/1 -> Mean :: float()` - calculate the mean of list of numbers,
-* `tmean([number()], {'inf' | Ll :: number(), 'inf' | Ul :: number()}) -> Mean :: float()` - Compute the trimmed mean
+* `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
 * `gmean([number()]) -> Mean :: float()` - Compute the geometric mean along the specified axis.
+* `tmean([number()], {'inf' | Ll :: number(), 'inf' | Ul :: number()}) -> Mean :: float()` - Compute the trimmed mean
 * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
 * `tmin([number()], 'inf' | number()) -> number()` - Compute the trimmed minimum
 * `tmax([number()], 'inf' | number()) -> number()` - Compute the trimmed maximum
 * `tvar([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed variance
 * `tstd([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed sample standard deviation 
-* `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
 * `tsem([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed standard error of the mean
+* `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -32,9 +33,10 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* linregress(x[, y]) - Calculate a regression line
+* itemfreq(a) - Returns a 2D array of item frequencies.
 * histogram2(a, bins) - Compute histogram using divisions in bins.
 * histogram(a[, numbins, defaultlimits, ...]) - Separates the range into several bins and returns the number of instances of a in each bin.
+* `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
 
 Still flaky about:
 
@@ -47,7 +49,6 @@ Still flaky about:
 * skewtest(a[, axis]) - ests whether the skew is different from the normal distribution.
 * kurtosistest(a[, axis]) - Tests whether a dataset has normal kurtosis
 * normaltest(a[, axis])	- Tests whether a sample differs from a normal distribution.
-* itemfreq(a) - Returns a 2D array of item frequencies.
 * scoreatpercentile(a, per[, limit, ...]) - Calculate the score at the given per percentile of the sequence a.
 * percentileofscore(a, score[, kind]) - The percentile rank of a score relative to a list of scores.
 * cumfreq(a[, numbins, defaultreallimits, weights]) - Returns a cumulative frequency histogram, using the histogram function.
@@ -70,7 +71,6 @@ Still flaky about:
 * `ttest_ind(a, b[, axis, equal_var])` - Calculates the T-test for the means of TWO INDEPENDENT samples of scores.
 * `ttest_rel(a, b[, axis])` - Calculates the T-test on TWO RELATED samples of scores, a and b.
 * kstest(rvs, cdf[, args, N, alternative, mode]) - Perform the Kolmogorov-Smirnov test for goodness of fit
-* `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
 * `ks_2samp(data1, data2)` - Computes the Kolmogorov-Smirnof statistic on 2 samples.
 * `mannwhitneyu(x, y[, use_continuity])` - Computes the Mann-Whitney rank test on samples x and y.
 * tiecorrect(rankvals) - Tie correction factor for ties in the Mann-Whitney U and
