@@ -23,7 +23,8 @@
 	hmean/1,
 	gmean/1,
 	cmedian/1,
-	linregress/1
+	linregress/1,
+	itemfreq/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -40,7 +41,8 @@ all() ->
 	tvar, tstd,
 	tsem,
 	cmedian,
-	linregress
+	linregress,
+	itemfreq
 ].
 
 -define(err, (0.005)).
@@ -146,3 +148,10 @@ linregress(_Config) ->
     ok   = ?equal(0.89, R2),
     ok.
 
+itemfreq(_Config) ->
+    Set1 = [1,1,1,1,1,a,a,a,a,d,d,d,e,e,"hi"],
+    [{1,5},{a,4},{d,3},{e,2},{"hi",1}] = matstat:itemfreq(Set1),
+    Set2 = [1,a,1,e,1,a,a,1,a,d,"hi",d,1,e,d,1,1,1],
+    [{1,8},{a,4},{d,3},{e,2},{"hi",1}] = matstat:itemfreq(Set2),
+    [] = matstat:itemfreq([]),
+    ok.

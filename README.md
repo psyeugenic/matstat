@@ -11,6 +11,12 @@ I have two aspects of this:
 1. A somewhat complete set of functions that can be used as building blocks for functions to query measurements
 2. Sane return values that can be used as arguments directly with other functions
 
+### Naming ###
+
+* Drop the leading 't' for all trimmed functions? Makes sense if they are the default ones.
+* Rename limit option 'inf' to 'none'? 'inf' works great for positive limit but we don't want two atoms, i.e 'inf', '-inf'.
+* `linregress/1` could get a prettier name.
+* `itemfreq/1` could get a prettier name.
 
 ### Done ###
 
@@ -26,6 +32,7 @@ I have two aspects of this:
 * `tstd([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed sample standard deviation 
 * `tsem([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed standard error of the mean
 * `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
+* `itemfreq([term()]) -> [{term(), integer()}]` - Returns a 2D list of item frequencies. Highest frequency first.
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -33,7 +40,6 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
-* itemfreq(a) - Returns a 2D array of item frequencies.
 * histogram2(a, bins) - Compute histogram using divisions in bins.
 * histogram(a[, numbins, defaultlimits, ...]) - Separates the range into several bins and returns the number of instances of a in each bin.
 * `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.

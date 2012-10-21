@@ -28,7 +28,8 @@
 	gmean/1,
 	hmean/1,
 	cmedian/1,
-	linregress/1
+	linregress/1,
+	itemfreq/1
     ]).
 
 -define(nolimit, inf).
@@ -192,6 +193,22 @@ sum_sumsqr_n([_|Vs], Ls, Sum, SumSqr, N) ->
 sum_sumsqr_n([], _, Sum, SumSqr, N) ->
     {Sum, SumSqr, N}.
 
+
+-spec itemfreq([term()]) -> [{term(), integer()}].
+
+%% gb_trees uses coercion, e.g. 0 == 0.0
+itemfreq(Vs) -> 
+    lists:sort(fun
+	    ({_,A}, {_,B}) when A > B -> true;
+	    (_, _) -> false
+	end, gb_trees:to_list(itemfreq(Vs, gb_trees:empty()))).
+
+itemfreq([V|Vs], T) ->
+    case gb_trees:lookup(V, T) of
+	none -> itemfreq(Vs, gb_trees:enter(V, 1, T));
+	{value, N} -> itemfreq(Vs, gb_trees:enter(V, N + 1, T))
+    end;
+itemfreq([], T) -> T.
 
 %% old thinking
 msn([])  -> {0, 0}; 
