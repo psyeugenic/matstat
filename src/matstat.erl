@@ -29,7 +29,8 @@
 	hmean/1,
 	cmedian/1,
 	linregress/1,
-	itemfreq/1
+	itemfreq/1,
+	pearsonsr/1
     ]).
 
 -define(nolimit, inf).
@@ -151,13 +152,16 @@ linregress(Vs) ->
     end,
     {{Slope, Incpt}, R2}.
 
-sum_x_y_xy_x2_y2_n(Vs) -> 
-    sum_x_y_xy_x2_y2_n(Vs, 0, 0, 0, 0, 0, 0).
+-spec pearsonsr([{X :: number(), Y :: number()}]) -> float().
+    
 
-sum_x_y_xy_x2_y2_n([{X,Y}|Vs], SumX, SumY, SumXY, SumX2, SumY2, N) when is_number(X), is_number(Y) ->
-    sum_x_y_xy_x2_y2_n(Vs, SumX + X, SumY + Y, SumXY + X*Y, SumX2 + X*X, SumY2 + Y*Y, N + 1);
-sum_x_y_xy_x2_y2_n([], SumX, SumY, SumXY, SumX2, SumY2, N) ->
-    {SumX, SumY, SumXY, SumX2, SumY2, N}.
+pearsonsr(Vs) ->
+    {SumX, SumY, SumXY, SumX2, SumY2, N} = sum_x_y_xy_x2_y2_n(Vs),
+    DSxySxSy = (N *SumXY - SumX*SumY),
+    Sqrx = math:sqrt(N*SumX2 - SumX*SumX),
+    Sqry = math:sqrt(N*SumY2 - SumY*SumY),
+    DSxySxSy/(Sqrx*Sqry).
+
 
 -spec cmedian([number()]) -> number().
 
@@ -173,26 +177,12 @@ cmedian(Is) ->
     H  = N div 2,
     case N rem 2 of
 	1 -> % odd
-	    [I|_] = ltail(Ls, H),
+	    [I|_] = lists_tail(Ls, H),
 	    I;
 	0 -> % even
-	    [I0,I1|_] = ltail(Ls, H - 1),
+	    [I0,I1|_] = lists_tail(Ls, H - 1),
 	    (I0 + I1) / 2
     end.
-
-ltail([_|R], N) when N > 0 -> ltail(R, N - 1);
-ltail(R, 0) -> R.
-
-
-sum_sumsqr_n([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
-					(Ll =:= ?nolimit orelse V >= Ll),
-					(Ul =:= ?nolimit orelse V =< Ul) ->
-    sum_sumsqr_n(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
-sum_sumsqr_n([_|Vs], Ls, Sum, SumSqr, N) ->
-    sum_sumsqr_n(Vs, Ls, Sum, SumSqr, N);
-sum_sumsqr_n([], _, Sum, SumSqr, N) ->
-    {Sum, SumSqr, N}.
-
 
 -spec itemfreq([term()]) -> [{term(), integer()}].
 
@@ -251,3 +241,28 @@ cov([], _, [], _, S) -> S;
 cov([X|Xs], Xm, [Y|Ys], Ym, S) ->
     cov(Xs, Xm, Ys, Ym, S + (X - Xm)*(Y - Ym)).
 
+
+%% aux
+
+sum_x_y_xy_x2_y2_n(Vs) -> 
+    sum_x_y_xy_x2_y2_n(Vs, 0, 0, 0, 0, 0, 0).
+
+sum_x_y_xy_x2_y2_n([{X,Y}|Vs], SumX, SumY, SumXY, SumX2, SumY2, N) when is_number(X), is_number(Y) ->
+    sum_x_y_xy_x2_y2_n(Vs, SumX + X, SumY + Y, SumXY + X*Y, SumX2 + X*X, SumY2 + Y*Y, N + 1);
+sum_x_y_xy_x2_y2_n([], SumX, SumY, SumXY, SumX2, SumY2, N) ->
+    {SumX, SumY, SumXY, SumX2, SumY2, N}.
+
+
+sum_sumsqr_n([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
+					(Ll =:= ?nolimit orelse V >= Ll),
+					(Ul =:= ?nolimit orelse V =< Ul) ->
+    sum_sumsqr_n(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
+sum_sumsqr_n([_|Vs], Ls, Sum, SumSqr, N) ->
+    sum_sumsqr_n(Vs, Ls, Sum, SumSqr, N);
+sum_sumsqr_n([], _, Sum, SumSqr, N) ->
+    {Sum, SumSqr, N}.
+
+
+
+lists_tail([_|R], N) when N > 0 -> lists_tail(R, N - 1);
+lists_tail(R, 0) -> R.

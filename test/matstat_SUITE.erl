@@ -24,7 +24,8 @@
 	gmean/1,
 	cmedian/1,
 	linregress/1,
-	itemfreq/1
+	itemfreq/1,
+	pearsonsr/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -42,7 +43,8 @@ all() ->
 	tsem,
 	cmedian,
 	linregress,
-	itemfreq
+	itemfreq,
+	pearsonsr
 ].
 
 -define(err, (0.005)).
@@ -146,6 +148,13 @@ linregress(_Config) ->
     ok   = ?equal(6.7175, Slope),
     ok   = ?equal(-419.85, Intercept),
     ok   = ?equal(0.89, R2),
+    ok.
+
+pearsonsr(_Config) ->
+    Set = [{95,214},{82,152},{90,156},{81,129},{99,254},{100,266},
+	{93,210},{95,204},{93,213},{87,150}],
+    R  = matstat:pearsonsr(Set),
+    ok = ?equal(0.944093033, R),
     ok.
 
 itemfreq(_Config) ->
