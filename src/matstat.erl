@@ -33,6 +33,14 @@
 	pearsonsr/1
     ]).
 
+-export([
+	histogram/1, histogram/2,
+	histogram_new/3,
+	histogram_add/2,
+	histogram_property/1,
+	histogram_counts/1
+    ]).
+
 -define(nolimit, inf).
 
 -spec mean([number()]) -> float().
@@ -200,6 +208,91 @@ itemfreq([V|Vs], T) ->
     end;
 itemfreq([], T) -> T.
 
+
+
+-record(hist, {
+	n     = 0,    % number of values in bins
+	nbins = 0,
+	width = 1,
+	min   = none, % bin min
+	max   = none, % bin max
+	bins  = gb_trees:empty()
+    }).
+
+-type histogram() :: term().
+
+-spec histogram([number()]) -> [{number(), integer()}].
+
+histogram([_|_]= Vs) ->
+    {CVs, Min, Max, N}= min_max_n(Vs),
+    Nb = if
+	N > 4 -> trunc(math:sqrt(N));
+	true -> 2
+    end,
+    histogram_counts(histogram_add(CVs, histogram_new(Min, Max, Nb))).
+
+-spec histogram([number()], integer()) -> [{number(), integer()}].
+
+histogram(Vs, Nb) when is_integer(Nb) ->
+    {CVs, Min, Max, _N}= min_max_n(Vs),
+    histogram_counts(histogram_add(CVs, histogram_new(Min, Max, Nb))).
+
+-spec histogram_new(number(), number(), integer()) -> histogram().
+
+histogram_new(Min, Max, Nb) when is_number(Min), is_number(Max), is_integer(Nb), Nb > 1 ->
+    Width = histogram_bin_width(Min, Max, Nb),
+    #hist{ nbins = Nb, min = Min, max = Max, width = Width }.
+
+-spec histogram_add(number() | [number()], histogram()) -> histogram().
+
+histogram_add(V, #hist{ n = N, bins = Bins0 } = Hi) when is_number(V) ->
+    BinIdx = histogram_bin_idx(V, Hi),
+    Bins1  = case gb_trees:lookup(BinIdx, Bins0) of
+	none       -> gb_trees:enter(BinIdx, 1, Bins0);
+	{value, C} -> gb_trees:enter(BinIdx, C + 1, Bins0)
+    end,
+    Hi#hist{ n = N + 1, bins = Bins1 };
+
+histogram_add([], Hs) -> Hs;
+histogram_add([V|Vs], Hs) ->
+    histogram_add(Vs, histogram_add(V, Hs)).
+
+-spec histogram_property(histogram()) ->
+    [{atom(), number()}].
+
+histogram_property(#hist{ n = N, width = W, min = Min, max = Max, nbins = Nbins}) ->
+    [ {n, N}, {width, W}, {min, Min}, {max, Max}, {nbins, Nbins} ].
+
+-spec histogram_counts(histogram()) -> [{number(), integer()}].
+
+histogram_counts(#hist{ nbins = N, min = Min, width = W, bins = Bins }) ->
+    histogram_counts(0, N, Min, W, Bins).
+
+histogram_counts(I, N, Min, W, Bins) when I < N ->
+    [{I*W + Min, histogram_count(I, Bins)}|histogram_counts(I + 1, N, Min, W, Bins)];
+histogram_counts(_, _, _, _, _) -> [].
+
+histogram_count(Bin, Bins) ->
+    case gb_trees:lookup(Bin, Bins) of
+	none -> 0;
+	{value, V} -> V
+    end.
+
+histogram_bin_idx(V, #hist{ nbins = N, max = Max }) when V > Max -> N - 1;
+histogram_bin_idx(V, #hist{ min = Min }) when V < Min -> 0;
+histogram_bin_idx(V, #hist{ width = W, min = Min }) ->
+    erlang:trunc((V - Min)/W).
+
+% try to keep width as integer if possible
+histogram_bin_width(Min, Max, Nb) when is_integer(Min), is_integer(Max), is_integer(Nb) ->
+    if
+	(Max - Min + 1) rem Nb =:= 0 -> (Max - Min + 1) div Nb;
+	true -> (Max - Min + 1)/Nb
+    end;
+histogram_bin_width(Min, Max, Nb) ->
+    (Max - Min + 1)/Nb.
+
+
 %% old thinking
 msn([])  -> {0, 0}; 
 msn([V]) -> {V, 0.0};
@@ -243,6 +336,18 @@ cov([X|Xs], Xm, [Y|Ys], Ym, S) ->
 
 
 %% aux
+
+min_max_n([V|Vs]) when is_number(V) -> min_max_n(Vs,[V],V,V,1);
+min_max_n([_|Vs]) -> min_max_n(Vs).
+
+min_max_n([V|Vs], Os, Min, Max, N) when is_number(V) ->
+    Vmin = if V < Min -> V; true -> Min end,
+    Vmax = if V > Max -> V; true -> Max end,
+    min_max_n(Vs, [V|Os], Vmin, Vmax, N + 1);
+min_max_n([_|Vs], Os, Min, Max, N) ->
+    min_max_n(Vs, Os, Min, Max, N);
+min_max_n([], Os, Min, Max, N) ->
+    {Os, Min, Max, N}.
 
 sum_x_y_xy_x2_y2_n(Vs) -> 
     sum_x_y_xy_x2_y2_n(Vs, 0, 0, 0, 0, 0, 0).
