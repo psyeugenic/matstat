@@ -15,6 +15,7 @@ I have two aspects of this:
 
  * Statistics:
    * frequencies - `itemfreq/1`
+   * histogram - `histogram_new/3`, `histogram_add/2`, `histogram_counts/2`, `histogram_property/1`
    * median - `cmedian/1`
    * mean - `tmean/1,2`, `gmean/1`, `hmean/1`
    * standard error - `tsem/1,2`
@@ -62,6 +63,8 @@ I have two aspects of this:
  * `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
  * `itemfreq([term()]) -> [{term(), integer()}]` - Returns a 2D list of item frequencies. Highest frequency first.
  * `pearsonr([{number(),number()}) -> float()` - Calculates a Pearson correlation coefficient (and the p-value for testing *not yet impl.*)
+ * `histogram([number()], Nbins :: integer()) -> [{number(), integer()}]` - Separates the range into several bins and returns the number of instances of a in each bin.
+   * `histogram_new/3`, `histogram_add/2`, `histogram_counts/2`, `histogram_property/1`
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -69,8 +72,6 @@ Function list from SciPy.stats Statistical Functions.
 
 Will Implement in Prio order:
 
- * histogram2(a, bins) - Compute histogram using divisions in bins.
- * histogram(a[, numbins, defaultlimits, ...]) - Separates the range into several bins and returns the number of instances of a in each bin.
  * `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
  * skew(a[, axis, bias])	- Computes the skewness of a data set.
  * kurtosis(a[, axis, fisher, bias]) - Computes the kurtosis (Fisher or Pearson) of a dataset.
