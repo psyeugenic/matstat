@@ -49,22 +49,46 @@ I have two aspects of this:
 
 ### Done ###
 
- * `msn/1 -> {Mean :: float(), StdDev :: float()}` - calculate mean and *sampled* standard deviation,
- * `mean/1 -> Mean :: float()` - calculate the mean of list of numbers,
+#### Part of continuous stats function set ####
+
+The continuous stats function set keeps a state for values added which may be queried.
+
+ * `matstat:new() -> stats()` - Create a new stats state.
+ * `matstat:new([{min | max, number()}]) -> stats()` - Create a new stats state.
+ * `matstat:add([number()] | number(), stats()) -> stats()`.
+
+The following functions may also query the stats state.
+
+ *  Compute the trimmed mean
+   * `tmean(stats() | [number()]) -> Mean :: float()`
+   * `tmean([number()], {'inf' | L :: number(), 'inf' | U :: number()}) -> Mean :: float()`
+ *  Compute the trimmed minimum
+   * `tmin(stats() | [number()]) -> Minimum :: number()`
+   * `tmin([number()], 'inf' | number()) -> Minimum :: number()`
+ * Compute the trimmed maximum
+   * `tmax(stats() | [number()]) -> Maximum :: number()` 
+   * `tmax([number()], 'inf' | number()) -> Maximum :: number()` 
+ * Compute the trimmed variance
+   * `tvar(stats() | [number()]) -> Variance :: float()`
+   * `tvar([number()], {'inf' | number(), 'inf' | number()}) -> Variance :: float()`
+ * Compute the trimmed sample standard deviation 
+   * `tstd(stats() | [number()]) -> StdDev :: float()`
+   * `tstd([number()], {'inf' | number(), 'inf' | number()}) -> StdDev :: float()`
+ * Compute the trimmed standard error of the mean
+   * `tsem(stats() | [number()]) -> StdErr :: float()`
+   * `tsem([number()], {'inf' | number(), 'inf' | number()}) -> StdErr :: float()`
+
+#### Standalone for now ####
+
  * `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
  * `gmean([number()]) -> Mean :: float()` - Compute the geometric mean along the specified axis.
- * `tmean([number()], {'inf' | Ll :: number(), 'inf' | Ul :: number()}) -> Mean :: float()` - Compute the trimmed mean
  * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
- * `tmin([number()], 'inf' | number()) -> number()` - Compute the trimmed minimum
- * `tmax([number()], 'inf' | number()) -> number()` - Compute the trimmed maximum
- * `tvar([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed variance
- * `tstd([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed sample standard deviation 
- * `tsem([number()], {'inf' | number(), 'inf' | number()}) -> float()` - Compute the trimmed standard error of the mean
  * `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
  * `itemfreq([term()]) -> [{term(), integer()}]` - Returns a 2D list of item frequencies. Highest frequency first.
  * `pearsonr([{number(),number()}) -> float()` - Calculates a Pearson correlation coefficient (and the p-value for testing *not yet impl.*)
  * `histogram([number()], Nbins :: integer()) -> [{number(), integer()}]` - Separates the range into several bins and returns the number of instances of a in each bin.
    * `histogram_new/3`, `histogram_add/2`, `histogram_counts/2`, `histogram_property/1`
+ * `msn/1 -> {Mean :: float(), StdDev :: float()}` - calculate mean and *sampled* standard deviation,
 
 Function list from SciPy.stats Statistical Functions.
 
@@ -73,18 +97,21 @@ Function list from SciPy.stats Statistical Functions.
 Will Implement in Prio order:
 
  * `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
- * skew(a[, axis, bias])	- Computes the skewness of a data set.
+ * skew(a[, axis, bias]) - Computes the skewness of a data set.
  * kurtosis(a[, axis, fisher, bias]) - Computes the kurtosis (Fisher or Pearson) of a dataset.
+ * zmap(scores, compare[, axis, ddof]) - Calculates the relative z-scores.
+ * zscore(a[, axis, ddof]) - Calculates the z score of each value in the sample, relative to the sample mean and standard deviation.
+ * moment(a[, moment, axis]) - Calculates the nth moment about the mean for a sample.
+ * spearmanr(a[, b, axis]) - Calculates a Spearman rank-order correlation coefficient and the p-value
 
 Still flaky about:
 
  * mode(a[, axis]) - Returns an array of the modal (most common) value in the passed array.
- * moment(a[, moment, axis]) - Calculates the nth moment about the mean for a sample.
  * variation(a[, axis]) - Computes the coefficient of variation, the ratio of the biased standard deviation to the mean.
  * describe(a[, axis]) - Computes several descriptive statistics of the passed array.
- * skewtest(a[, axis]) - ests whether the skew is different from the normal distribution.
+ * skewtest(a[, axis]) - Tests whether the skew is different from the normal distribution.
  * kurtosistest(a[, axis]) - Tests whether a dataset has normal kurtosis
- * normaltest(a[, axis])	- Tests whether a sample differs from a normal distribution.
+ * normaltest(a[, axis]) - Tests whether a sample differs from a normal distribution.
  * scoreatpercentile(a, per[, limit, ...]) - Calculate the score at the given per percentile of the sequence a.
  * percentileofscore(a, score[, kind]) - The percentile rank of a score relative to a list of scores.
  * cumfreq(a[, numbins, defaultreallimits, weights]) - Returns a cumulative frequency histogram, using the histogram function.
@@ -92,14 +119,10 @@ Still flaky about:
  * `obrientransform(*args)` - Computes a transform on input data (any number of columns).
  * signaltonoise(a[, axis, ddof]) - The signal-to-noise ratio of the input data.
  * `bayes_mvs(data[, alpha])` - Bayesian confidence intervals for the mean, var, and std.
- * sem(a[, axis, ddof]) - Calculates the standard error of the mean (or standard error of measurement) of the values in the input array.
- * zmap(scores, compare[, axis, ddof]) - Calculates the relative z-scores.
- * zscore(a[, axis, ddof]) - Calculates the z score of each value in the sample, relative to the sample mean and standard deviation.
  * threshold(a[, threshmin, threshmax, newval]) - Clip array to a given value.
  * trimboth(a, proportiontocut) - Slices off a proportion of items from both ends of an array.
  * trim1(a, proportiontocut[, tail]) - Slices off a proportion of items from ONE end of the passed array
  * `f_oneway(*args)` - Performs a 1-way ANOVA.
- * spearmanr(a[, b, axis]) - Calculates a Spearman rank-order correlation coefficient and the p-value
  * pointbiserialr(x, y) - Calculates a point biserial correlation coefficient and the associated p-value.
  * `kendalltau(x, y[, initial_lexsort])` - Calculates Kendall’s tau, a correlation measure for ordinal data.
  * `ttest_1samp(a, popmean[, axis])` - Calculates the T-test for the mean of ONE group of scores a.
