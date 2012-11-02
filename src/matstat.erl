@@ -7,6 +7,14 @@
 %%
 
 -module(matstat).
+
+-define(nolimit, inf).
+
+-export([
+	new/0, new/1,
+	add/2
+    ]).
+
 -export([
 	msn/1,
 	mean/1,
@@ -34,6 +42,12 @@
     ]).
 
 -export([
+	moment/2,
+	kurtosis/1,
+	skewness/1
+    ]).
+
+-export([
 	histogram/1, histogram/2,
 	histogram_new/3,
 	histogram_add/2,
@@ -41,23 +55,24 @@
 	histogram_counts/1
     ]).
 
--export([
-	new/0, new/1,
-	add/2
-    ]).
-
--define(nolimit, inf).
-
 %%% stats implementation
 
+-record(moment, {
+	m1 = 0,   % mean
+	m2 = 0,
+	m3 = 0,
+	m4 = 0
+    }).
+
 -record(stats, {
-	lmin  = ?nolimit,
-	lmax  = ?nolimit,
-	sum   = 0,
-	sumsq = 0,
-	min   = 0,
-	max   = 0,
-	n     = 0
+	lmin   = ?nolimit,
+	lmax   = ?nolimit,
+	sum    = 0,
+	sumsq  = 0,
+	min    = 0,
+	max    = 0,
+	moment = #moment{},
+	n      = 0
     }).
 
 -type stats() :: term().
@@ -85,22 +100,39 @@ add(V, #stats{ lmin = L, lmax = U } = S) when is_number(V),
 add([V|Vs], S) -> add(Vs, add(V,S));
 add(_, S) -> S.
 
-update(V, #stats{ n = 0 } = S) ->
+update(V, #stats{ n = 0, moment = M } = S) ->
     S#stats{
-	min   = V,
-	max   = V,
-	n     = 1,
-	sum   = V,
-	sumsq = V*V
+	min    = V,
+	max    = V,
+	n      = 1,
+	sum    = V,
+	sumsq  = V*V,
+	moment = update_moment(V, 0, M)
     };
-update(V, S) ->
+update(V, #stats{ n = N, moment = M } = S) ->
     S#stats{
-	min   = erlang:min(V, S#stats.min),
-	max   = erlang:max(V, S#stats.max),
-	n     = 1   + S#stats.n,
-	sum   = V   + S#stats.sum,
-	sumsq = V*V + S#stats.sumsq
+	min    = erlang:min(V, S#stats.min),
+	max    = erlang:max(V, S#stats.max),
+	n      = 1   + N,
+	sum    = V   + S#stats.sum,
+	sumsq  = V*V + S#stats.sumsq,
+	moment = update_moment(V, N, M)
     }.
+
+update_moment(V, N1, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 } = Ms) ->
+    N = N1 + 1,
+    Delta = V - M1,
+    DeltaN  = Delta / N,
+    DeltaN2 = DeltaN*DeltaN,
+    Term1 = Delta * DeltaN * N1,
+
+    Ms#moment{
+	m1 = M1 + DeltaN,
+	m2 = M2 + Term1,
+	m3 = M3 + Term1 * DeltaN * (N - 2) - 3 * DeltaN * M2,
+	m4 = M4 + Term1 * DeltaN2 * (N*N - 3*N + 3) + 6 * DeltaN2 * M2 - 4 * DeltaN * M3
+    }.
+
 
 %%% vanilla implementation
 
@@ -155,6 +187,41 @@ tsem(#stats{ n = N, sum = Sum, sumsq = SumSq }) ->
 tsem(Vs) when is_list(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
 tsem(Vs, {L,U}) when is_list(Vs) ->
     tsem(add(Vs, new([{min,L},{max,U}]))).
+
+% from http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics
+
+-spec kurtosis(stats() | [number()]) -> float().
+-spec kurtosis([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+kurtosis(#stats{ n = N } = S) when N > 0 ->
+    M2 = moment(2, S),
+    M4 = moment(4, S),
+    G2 = M4 / (M2*M2) - 3, % true
+    ((N + 1)*G2 + 6)*(N - 1)/((N-2)*(N-3)); % sampled
+
+kurtosis(Vs) when is_list(Vs) -> kurtosis(Vs, {?nolimit, ?nolimit}).
+kurtosis(Vs, {L,U}) when is_list(Vs) ->
+    kurtosis(add(Vs, new([{min,L},{max,U}]))).
+
+-spec skewness(stats() | [number()]) -> float().
+-spec skewness([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
+skewness(#stats{ n = N } = S ) when N > 0 ->
+    M2 = moment(2, S),
+    M3 = moment(3, S),
+    G1 = M3 / (M2 *math:sqrt(M2)), % true
+    math:sqrt(N*(N-1))/(N - 2)*G1; % sampled
+skewness(Vs) when is_list(Vs) -> skewness(Vs, {?nolimit, ?nolimit}).
+skewness(Vs, {L,U}) when is_list(Vs) ->
+    skewness(add(Vs, new([{min,L},{max,U}]))).
+
+-spec moment(Moment :: integer(), stats() | [number()]) -> float().
+
+moment(I, #stats{ n = N, moment = M}) when is_integer(I), I > 0, I < 5->
+    element(I + 1, M)/N;
+moment(I, Vs) when is_list(Vs), is_integer(I) ->
+    moment(I, add(Vs, new())).
+
 
 %% not in main stats
 %% should it be?

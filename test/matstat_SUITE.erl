@@ -25,7 +25,10 @@
 	cmedian/1,
 	linregress/1,
 	itemfreq/1,
-	pearsonsr/1
+	pearsonsr/1,
+	moment/1,
+	skewness/1,
+	kurtosis/1
     ]).
 
 init_per_suite(Config) when is_list(Config) ->
@@ -44,8 +47,11 @@ all() ->
 	cmedian,
 	linregress,
 	itemfreq,
-	pearsonsr
-].
+	pearsonsr,
+	moment,
+	skewness,
+	kurtosis
+    ].
 
 -define(err, (0.005)).
 -define(equal(A,B), equal(A,B)).
@@ -164,3 +170,43 @@ itemfreq(_Config) ->
     [{1,8},{a,4},{d,3},{e,2},{"hi",1}] = matstat:itemfreq(Set2),
     [] = matstat:itemfreq([]),
     ok.
+
+
+skewness(_Config) ->
+    % sampled
+    Set1 = [m(61,5),m(64,18),m(67,42),m(70,27),m(73,8)],
+    ok   = ?equal(-0.1098, matstat:skewness(Set1)),
+    ok.
+
+moment(_Config) ->
+    Set1 = [1,3,6,10],
+    Set2 = [m(61,5),m(64,18),m(67,42),m(70,27),m(73,8)],
+    ok   = ?equal(8.5275, matstat:moment(2, Set2)),
+    ok   = ?equal(-2.6933, matstat:moment(3, Set2)),
+    ok   = ?equal(199.3760, matstat:moment(4, Set2)),
+
+    % was these wrong to begin with?
+    %ok   = ?equal(5, matstat:moment(1, Set1)),
+    %ok   = ?equal(36.5, matstat:moment(2, Set1)),
+    %ok   = ?equal(311, matstat:moment(3, Set1)),
+    ok.
+
+%moment_mean(_Config) ->
+%    Set1 = [1,3,6,10],
+%    ok   = ?equal(11.5, matstat:moment(2, mean, Set1)),
+%    ok.
+
+kurtosis(_Config) ->
+    Set1 = [6,7,8,9,10],
+    Set2 = [m(61,5),m(64,18),m(67,42),m(70,27),m(73,8)],
+    % total, i.e. not sampled values
+    % Set3 = [2, 2, 4, 6, 8, 10, 10],
+    % ok   = ?equal(-(85/54), matstat:kurtosis(Set3)),
+    % Set4 = [0, 7, 7, 6, 6, 6, 5, 5, 4, 1],
+    % ok   = ?equal(-(74146/271441), matstat:kurtosis(Set4)),
+    % sampled
+    ok   = ?equal(-1.2, matstat:kurtosis(Set1)),
+    ok   = ?equal(-0.2091, matstat:kurtosis(Set2)),
+    ok.
+
+m(V,N) -> lists:duplicate(N,V).
