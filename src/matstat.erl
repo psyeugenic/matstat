@@ -41,80 +41,123 @@
 	histogram_counts/1
     ]).
 
+-export([
+	new/0, new/1,
+	add/2
+    ]).
+
 -define(nolimit, inf).
 
+%%% stats implementation
+
+-record(stats, {
+	lmin  = ?nolimit,
+	lmax  = ?nolimit,
+	sum   = 0,
+	sumsq = 0,
+	min   = 0,
+	max   = 0,
+	n     = 0
+    }).
+
+-type stats() :: term().
+
+-spec new() -> stats().
+-spec new(Opts :: [{atom(), term()}]) -> stats().
+
+new() -> new([]).
+
+new(Opts) ->
+    lists:foldl(fun({K,V},S) ->
+		new_opts(K,V,S)
+	end, #stats{}, Opts).
+
+new_opts(min, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmin = V };
+new_opts(max, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmax = V };
+new_opts(_, _, S) -> S.
+
+-spec add([number()] | number(), stats()) -> stats().
+
+add(V, #stats{ lmin = L, lmax = U } = S) when is_number(V), 
+	(L =:= ?nolimit orelse V >= L),
+	(U =:= ?nolimit orelse V =< U) ->
+    update(V, S);
+add([V|Vs], S) -> add(Vs, add(V,S));
+add(_, S) -> S.
+
+update(V, #stats{ n = 0 } = S) ->
+    S#stats{
+	min   = V,
+	max   = V,
+	n     = 1,
+	sum   = V,
+	sumsq = V*V
+    };
+update(V, S) ->
+    S#stats{
+	min   = erlang:min(V, S#stats.min),
+	max   = erlang:max(V, S#stats.max),
+	n     = 1   + S#stats.n,
+	sum   = V   + S#stats.sum,
+	sumsq = V*V + S#stats.sumsq
+    }.
+
+%%% vanilla implementation
+
 -spec mean([number()]) -> float().
--spec tmean([number()]) -> float().
+-spec tmean([number()] | stats()) -> float().
 -spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
 
-mean(Is) -> tmean(Is, {?nolimit, ?nolimit}).
-tmean(Is) -> tmean(Is, {?nolimit, ?nolimit}).
-tmean(Is, Limit) -> tmean(Is, Limit, 0, 0).
-tmean([I|Is], {Ll, Ul} = Ls, S, N) when is_number(I),
-					(Ll =:= ?nolimit orelse I >= Ll),
-					(Ul =:= ?nolimit orelse I =< Ul) ->
-    tmean(Is, Ls, S + I, N + 1);
-tmean([_|Is], Ls, S, N) ->
-    tmean(Is, Ls, S, N);
-tmean([], _, 0, 0) -> 0.0;
-tmean([], _, S, N) -> S/N.
+mean(Vs)  -> tmean(Vs).
+tmean(#stats{ n = N, sum = Sum }) -> Sum/N;
+tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
+tmean(Vs, {L,U}) when is_list(Vs) ->
+    tmean(add(Vs, new([{min,L},{max, U}]))).
 
--spec tmin([number()]) -> number().
+-spec tmin([number()] | stats()) -> number().
 -spec tmin([number()], 'inf' | number()) -> number().
 
-tmin(Is) -> tmin(Is, ?nolimit).
-tmin([I|Is], Limit) when I >= Limit; Limit =:= ?nolimit ->
-    tmin(Is, Limit, I);
-tmin([_|Is], Limit) -> 
-    tmin(Is, Limit).
+tmin(#stats{ min = V }) -> V;
+tmin(Vs) when is_list(Vs) -> tmin(Vs, ?nolimit).
+tmin(Vs, L) when is_list(Vs) ->
+    tmin(add(Vs, new([{min, L}]))).
 
-tmin([I|Is], Limit, Min) when I < Min andalso (I >= Limit orelse Limit =:= ?nolimit) ->
-    tmin(Is, Limit, I);
-tmin([_|Is], Limit, Min) ->
-    tmin(Is, Limit, Min);
-tmin([], _, Min) ->
-    Min.
-
--spec tmax([number()]) -> number().
+-spec tmax([number()] | stats()) -> number().
 -spec tmax([number()], 'inf' | number()) -> number().
 
-tmax(Is) -> tmax(Is, ?nolimit).
-tmax([I|Is], Limit) when I =< Limit; Limit =:= ?nolimit ->
-    tmax(Is, Limit, I);
-tmax([_|Is], Limit) -> 
-    tmax(Is, Limit).
+tmax(#stats{ max = V }) -> V;
+tmax(Vs) when is_list(Vs) -> tmax(Vs, ?nolimit).
+tmax(Vs, L) when is_list(Vs) ->
+    tmax(add(Vs, new([{max, L}]))).
 
-tmax([I|Is], Limit, Max) when I > Max andalso (I =< Limit orelse Limit =:= ?nolimit) ->
-    tmax(Is, Limit, I);
-tmax([_|Is], Limit, Max) ->
-    tmax(Is, Limit, Max);
-tmax([], _, Max) ->
-    Max.
-
--spec tvar([number()]) -> float().
+-spec tvar([number()] | stats()) -> float().
 -spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
-tvar(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
-tvar(Vs, Limit) ->
-    {Sum,SumSqr,N} = sum_sumsqr_n(Vs, Limit, 0.0, 0.0, 0),
-    (SumSqr - Sum*Sum/N)/(N - 1).
+tvar(#stats{ n = N, sum = Sum, sumsq = SumSqr}) ->
+    (SumSqr - Sum*Sum/N)/(N - 1);
+tvar(Vs) when is_list(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
+tvar(Vs, {L,U}) when is_list(Vs) ->
+    tvar(add(Vs, new([{min,L},{max,U}]))).
 
--spec tstd([number()]) -> float().
+-spec tstd([number()] | stats()) -> float().
 -spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
-tstd(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
-tstd(Vs, Limit) ->
-    math:sqrt(tvar(Vs, Limit)).
+tstd(#stats{} = S) -> math:sqrt(tvar(S));
+tstd(Vs) when is_list(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
+tstd(Vs, {L,U}) when is_list(Vs) ->
+    tstd(add(Vs, new([{min,L},{max,U}]))).
 
--spec tsem([number()]) -> float().
+-spec tsem([number()] | stats()) -> float().
 -spec tsem([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
-tsem(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
-tsem(Vs, Limit) ->
-    {Sum,SumSqr,N} = sum_sumsqr_n(Vs, Limit, 0.0, 0.0, 0),
-    math:sqrt(((SumSqr - Sum*Sum/N)/(N - 1))/N).
-    
+tsem(#stats{ n = N, sum = Sum, sumsq = SumSq }) ->
+    math:sqrt(((SumSq - Sum*Sum/N)/(N - 1))/N);
+tsem(Vs) when is_list(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
+tsem(Vs, {L,U}) when is_list(Vs) ->
+    tsem(add(Vs, new([{min,L},{max,U}]))).
 
+%% not in main stats
+%% should it be?
 
 -spec gmean([number()]) -> float().
 
@@ -356,17 +399,6 @@ sum_x_y_xy_x2_y2_n([{X,Y}|Vs], SumX, SumY, SumXY, SumX2, SumY2, N) when is_numbe
     sum_x_y_xy_x2_y2_n(Vs, SumX + X, SumY + Y, SumXY + X*Y, SumX2 + X*X, SumY2 + Y*Y, N + 1);
 sum_x_y_xy_x2_y2_n([], SumX, SumY, SumXY, SumX2, SumY2, N) ->
     {SumX, SumY, SumXY, SumX2, SumY2, N}.
-
-
-sum_sumsqr_n([V|Vs], {Ll, Ul} = Ls, Sum, SumSqr, N) when is_number(V),
-					(Ll =:= ?nolimit orelse V >= Ll),
-					(Ul =:= ?nolimit orelse V =< Ul) ->
-    sum_sumsqr_n(Vs, Ls, Sum + V , SumSqr + V*V, N + 1);
-sum_sumsqr_n([_|Vs], Ls, Sum, SumSqr, N) ->
-    sum_sumsqr_n(Vs, Ls, Sum, SumSqr, N);
-sum_sumsqr_n([], _, Sum, SumSqr, N) ->
-    {Sum, SumSqr, N}.
-
 
 
 lists_tail([_|R], N) when N > 0 -> lists_tail(R, N - 1);
