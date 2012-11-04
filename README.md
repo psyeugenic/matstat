@@ -20,8 +20,8 @@ I have two aspects of this:
    * mean - `tmean/1,2`, `gmean/1`, `hmean/1`
    * standard error - `tsem/1,2`
    * attributes - `tvar/1,2`, `tstd/1,2`, `tmin/1,2`, `tmax/1,2`
-   * skew - TODO
-   * kurtosis - TODO
+   * skewness - `skewness/1,2`
+   * kurtosis - `kurtosis/1,2`
  * Correlations:
    * Pearson’s product-moment correlation coefficient (Pearson's r) - `pearsonsr/1`
    * Point biserial correlation coefficient - TODO
@@ -38,7 +38,6 @@ I have two aspects of this:
  * Variance Analysis: 
    * One-way ANOVA - TODO
  * Tests: F, T, Levene, U-Mannwhitney. - TODO
-
 
 ### Naming ###
 
@@ -77,6 +76,14 @@ The following functions may also query the stats state.
  * Compute the trimmed standard error of the mean
    * `tsem(stats() | [number()]) -> StdErr :: float()`
    * `tsem([number()], {'inf' | number(), 'inf' | number()}) -> StdErr :: float()`
+ * Compute the moment
+   * `moment(Moment :: 1..4, stats()) -> Moment :: float()`
+ * Compute the skewness
+   * `skewness(stats() | [number()]) -> Skewness :: float()`
+   * `skewness([number()], {'inf' | number(), 'inf' | number()}) -> Skewness :: float()`
+ * Compute the kurtosis
+   * `kurtosis(stats() | [number()]) -> Kurtosis :: float()`
+   * `kurtosis([number()], {'inf' | number(), 'inf' | number()}) -> Kurtosis :: float()`
 
 #### Standalone for now ####
 
@@ -97,8 +104,6 @@ Function list from SciPy.stats Statistical Functions.
 Will Implement in Prio order:
 
  * `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
- * skew(a[, axis, bias]) - Computes the skewness of a data set.
- * kurtosis(a[, axis, fisher, bias]) - Computes the kurtosis (Fisher or Pearson) of a dataset.
  * zmap(scores, compare[, axis, ddof]) - Calculates the relative z-scores.
  * zscore(a[, axis, ddof]) - Calculates the z score of each value in the sample, relative to the sample mean and standard deviation.
  * moment(a[, moment, axis]) - Calculates the nth moment about the mean for a sample.
