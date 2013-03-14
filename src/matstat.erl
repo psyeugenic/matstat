@@ -71,7 +71,7 @@
 	sumsq  = 0,
 	min    = 0,
 	max    = 0,
-	moment = #moment{},
+	cbs    = [],
 	n      = 0
     }).
 
@@ -83,9 +83,10 @@
 new() -> new([]).
 
 new(Opts) ->
+    Cbs = [{moment, {fun update_moment/3, #moment{}}}],
     lists:foldl(fun({K,V},S) ->
 		new_opts(K,V,S)
-	end, #stats{}, Opts).
+	end, #stats{ cbs = Cbs }, Opts).
 
 new_opts(min, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmin = V };
 new_opts(max, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmax = V };
@@ -100,26 +101,30 @@ add(V, #stats{ lmin = L, lmax = U } = S) when is_number(V),
 add([V|Vs], S) -> add(Vs, add(V,S));
 add(_, S) -> S.
 
-update(V, #stats{ n = 0, moment = M } = S) ->
+update(V, #stats{ n = 0, cbs = Cbs } = S) ->
     S#stats{
 	min    = V,
 	max    = V,
 	n      = 1,
 	sum    = V,
 	sumsq  = V*V,
-	moment = update_moment(V, 0, M)
+	cbs    = update_cbs(V, S, Cbs)
     };
-update(V, #stats{ n = N, moment = M } = S) ->
+update(V, #stats{ n = N, cbs = Cbs } = S) ->
     S#stats{
 	min    = erlang:min(V, S#stats.min),
 	max    = erlang:max(V, S#stats.max),
 	n      = 1   + N,
 	sum    = V   + S#stats.sum,
 	sumsq  = V*V + S#stats.sumsq,
-	moment = update_moment(V, N, M)
+	cbs    = update_cbs(V, S, Cbs)
     }.
 
-update_moment(V, N1, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 } = Ms) ->
+update_cbs(V, S, [{K,{Fun, Data}}|Cbs]) ->
+    [{K, {Fun, Fun(V, S, Data)}}|update_cbs(V, S, Cbs)];
+update_cbs(_, _, []) -> [].
+
+update_moment(V, #stats{ n = N1 }, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 } = Ms) ->
     N = N1 + 1,
     Delta = V - M1,
     DeltaN  = Delta / N,
@@ -217,7 +222,8 @@ skewness(Vs, {L,U}) when is_list(Vs) ->
 
 -spec moment(Moment :: integer(), stats() | [number()]) -> float().
 
-moment(I, #stats{ n = N, moment = M}) when is_integer(I), I > 0, I < 5->
+moment(I, #stats{ n = N, cbs = Cbs}) when is_integer(I), I > 0, I < 5->
+    {_, M} = proplists:get_value(moment, Cbs),
     element(I + 1, M)/N;
 moment(I, Vs) when is_list(Vs), is_integer(I) ->
     moment(I, add(Vs, new())).
