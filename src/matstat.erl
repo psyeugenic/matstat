@@ -78,9 +78,10 @@
 -type stats() :: term().
 
 -spec new() -> stats().
--spec new(Opts :: [{atom(), term()}]) -> stats().
 
 new() -> new([]).
+
+-spec new(Opts :: [{atom(), term()}]) -> stats().
 
 new(Opts) ->
     Cbs = [{moment, {fun update_moment/3, #moment{}}}],
@@ -142,74 +143,88 @@ update_moment(V, #stats{ n = N1 }, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 }
 %%% vanilla implementation
 
 -spec mean([number()]) -> float().
--spec tmean([number()] | stats()) -> float().
--spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
 
 mean(Vs)  -> tmean(Vs).
+
+-spec tmean([number()] | stats()) -> float().
+
 tmean(#stats{ n = N, sum = Sum }) -> Sum/N;
 tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
+
+-spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
+
 tmean(Vs, {L,U}) when is_list(Vs) ->
     tmean(add(Vs, new([{min,L},{max, U}]))).
 
 -spec tmin([number()] | stats()) -> number().
--spec tmin([number()], 'inf' | number()) -> number().
 
 tmin(#stats{ min = V }) -> V;
 tmin(Vs) when is_list(Vs) -> tmin(Vs, ?nolimit).
+
+-spec tmin([number()], 'inf' | number()) -> number().
+
 tmin(Vs, L) when is_list(Vs) ->
     tmin(add(Vs, new([{min, L}]))).
 
 -spec tmax([number()] | stats()) -> number().
--spec tmax([number()], 'inf' | number()) -> number().
 
 tmax(#stats{ max = V }) -> V;
 tmax(Vs) when is_list(Vs) -> tmax(Vs, ?nolimit).
+
+-spec tmax([number()], 'inf' | number()) -> number().
+
 tmax(Vs, L) when is_list(Vs) ->
     tmax(add(Vs, new([{max, L}]))).
 
 -spec tvar([number()] | stats()) -> float().
--spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
 tvar(#stats{ n = N, sum = Sum, sumsq = SumSqr}) ->
     (SumSqr - Sum*Sum/N)/(N - 1);
 tvar(Vs) when is_list(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
+
+-spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
 tvar(Vs, {L,U}) when is_list(Vs) ->
     tvar(add(Vs, new([{min,L},{max,U}]))).
 
 -spec tstd([number()] | stats()) -> float().
--spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
 tstd(#stats{} = S) -> math:sqrt(tvar(S));
 tstd(Vs) when is_list(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
+
+-spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
 tstd(Vs, {L,U}) when is_list(Vs) ->
     tstd(add(Vs, new([{min,L},{max,U}]))).
 
 -spec tsem([number()] | stats()) -> float().
--spec tsem([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
 tsem(#stats{ n = N, sum = Sum, sumsq = SumSq }) ->
     math:sqrt(((SumSq - Sum*Sum/N)/(N - 1))/N);
 tsem(Vs) when is_list(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
+
+-spec tsem([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
 tsem(Vs, {L,U}) when is_list(Vs) ->
     tsem(add(Vs, new([{min,L},{max,U}]))).
 
 % from http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Higher-order_statistics
 
 -spec kurtosis(stats() | [number()]) -> float().
--spec kurtosis([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
 kurtosis(#stats{ n = N } = S) when N > 0 ->
     M2 = moment(2, S),
     M4 = moment(4, S),
     G2 = M4 / (M2*M2) - 3, % true
     ((N + 1)*G2 + 6)*(N - 1)/((N-2)*(N-3)); % sampled
-
 kurtosis(Vs) when is_list(Vs) -> kurtosis(Vs, {?nolimit, ?nolimit}).
+
+-spec kurtosis([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
 kurtosis(Vs, {L,U}) when is_list(Vs) ->
     kurtosis(add(Vs, new([{min,L},{max,U}]))).
 
 -spec skewness(stats() | [number()]) -> float().
--spec skewness([number()], {'inf' | number(), 'inf' | number()}) -> float().
 
 skewness(#stats{ n = N } = S ) when N > 0 ->
     M2 = moment(2, S),
@@ -217,6 +232,9 @@ skewness(#stats{ n = N } = S ) when N > 0 ->
     G1 = M3 / (M2 *math:sqrt(M2)), % true
     math:sqrt(N*(N-1))/(N - 2)*G1; % sampled
 skewness(Vs) when is_list(Vs) -> skewness(Vs, {?nolimit, ?nolimit}).
+
+-spec skewness([number()], {'inf' | number(), 'inf' | number()}) -> float().
+
 skewness(Vs, {L,U}) when is_list(Vs) ->
     skewness(add(Vs, new([{min,L},{max,U}]))).
 
