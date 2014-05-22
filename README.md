@@ -99,7 +99,7 @@ The following functions may also query the stats state.
 
 Function list from SciPy.stats Statistical Functions.
 
-### ToDo ###
+### TODO ###
 
 Will Implement in Prio order:
 
@@ -150,3 +150,6 @@ Still flaky about:
  * `fligner(*args, **kwds)` - Perform Fligner’s test for equal variances.
  * mood(x, y) - Perform Mood’s test for equal scale parameters.
  * `oneway(*args, **kwds)` - Test for equal means in two or more samples from the normal distribution.
+ * HdrHistogram
+
+Look at: http://www.infoq.com/presentations/latency-pitfalls
