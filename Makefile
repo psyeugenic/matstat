@@ -1,22 +1,26 @@
 ERL ?= erl
 APP := matstat
+REBAR := ./rebar
 
 .PHONY: deps test
 
-all: deps
-	@./rebar compile
+all: $(REBAR)
+	@$(REBAR) compile
 
-deps:
-	@./rebar get-deps
+deps: $(REBAR)
+	@$(REBAR) get-deps
 
-clean:
-	@./rebar clean
+clean: $(REBAR)
+	@$(REBAR) clean
 
-distclean: clean
-	@./rebar delete-deps
+distclean: $(REBAR) clean
+	@$(REBAR) delete-deps
 
-test:
-	@./rebar ct
+test: $(REBAR)
+	@$(REBAR) ct
 
 docs:
 	@erl -noshell -run edoc_run application '$(APP)' '"."' '[]'
+
+$(REBAR):
+	wget --output-document=$(REBAR) http://cloud.github.com/downloads/basho/rebar/rebar && chmod u+x $(REBAR)
