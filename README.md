@@ -61,8 +61,9 @@ The following functions may also query the stats state.
  *  Compute the trimmed mean
    * `tmean(stats() | [number()]) -> Mean :: float()`
    * `tmean([number()], {'inf' | L :: number(), 'inf' | U :: number()}) -> Mean :: float()`
- *  Compute the geometric mean
-   * `gmean([number()]) -> GeometricMean :: float()`
+ *  Compute the geometric and harmonic mean
+   * `gmean(stats() | [number()]) -> GeometricMean :: float()`
+   * `hmean(stats() | [number()]) -> HarmonicMean :: float()`
  *  Compute the trimmed minimum
    * `tmin(stats() | [number()]) -> Minimum :: number()`
    * `tmin([number()], 'inf' | number()) -> Minimum :: number()`
@@ -90,7 +91,6 @@ The following functions may also query the stats state.
 #### Standalone for now ####
 
  * `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
- * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
  * `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
  * `itemfreq([term()]) -> [{term(), integer()}]` - Returns a 2D list of item frequencies. Highest frequency first.
  * `pearsonr([{number(),number()}) -> float()` - Calculates a Pearson correlation coefficient (and the p-value for testing *not yet impl.*)

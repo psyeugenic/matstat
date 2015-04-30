@@ -10,69 +10,59 @@
 
 -define(nolimit, inf).
 
--export([
-	new/0, new/1,
-	add/2
-    ]).
+-export([new/0, new/1,
+        add/2]).
 
--export([
-	msn/1,
-	mean/1,
-	divide/2,
-	divide/3,
-	mult/2,
-	mult/3,
-	cov/2,
-	corr/2
-    ]).
+-export([msn/1,
+        mean/1,
+        divide/2,
+        divide/3,
+        mult/2,
+        mult/3,
+        cov/2,
+        corr/2]).
 
--export([
-	tmean/1, tmean/2,
-	tmin/1, tmin/2,
-	tmax/1, tmax/2,
-	tvar/1, tvar/2,
-	tstd/1, tstd/2,
-	tsem/1, tsem/2,
-	gmean/1,
-	hmean/1,
-	cmedian/1,
-	linregress/1,
-	itemfreq/1,
-	pearsonsr/1
-    ]).
+-export([tmean/1, tmean/2,
+        tmin/1, tmin/2,
+        tmax/1, tmax/2,
+        tvar/1, tvar/2,
+        tstd/1, tstd/2,
+        tsem/1, tsem/2,
+        gmean/1,
+        hmean/1,
+        cmedian/1,
+        linregress/1,
+        itemfreq/1,
+        pearsonsr/1]).
 
--export([
-	moment/2,
-	kurtosis/1,
-	skewness/1
-    ]).
+-export([moment/2,
+        kurtosis/1,
+        skewness/1]).
 
--export([
-	histogram/1, histogram/2,
-	histogram_new/3,
-	histogram_add/2,
-	histogram_property/1,
-	histogram_counts/1
-    ]).
+-export([histogram/1, histogram/2,
+        histogram_new/3,
+        histogram_add/2,
+        histogram_property/1,
+        histogram_counts/1]).
 
 %%% stats implementation
 
 -record(moment, {
-	m1 = 0,   % mean
-	m2 = 0,
-	m3 = 0,
-	m4 = 0
+        m1 = 0,   % mean
+        m2 = 0,
+        m3 = 0,
+        m4 = 0
     }).
 
 -record(stats, {
-	lmin   = ?nolimit,
-	lmax   = ?nolimit,
-	sum    = 0,
-	sumsq  = 0,
-	min    = 0,
-	max    = 0,
-	cbs    = [],
-	n      = 0
+        lmin   = ?nolimit,
+        lmax   = ?nolimit,
+        sum    = 0,
+        sumsq  = 0,
+        min    = 0,
+        max    = 0,
+        cbs    = [],
+        n      = 0
     }).
 
 -type stats() :: term().
@@ -84,52 +74,53 @@ new() -> new([]).
 -spec new(Opts) -> stats() when
       Opts :: {'lmin', number()} |
               {'lmax', number()} |
-	      'gmean'.
+              'gmean'.
 
 new(Opts) ->
     Cbs = [{moment, {fun update_moment/3, #moment{}}}],
     lists:foldl(fun(Opt,S) ->
-			new_opts(Opt,S)
-		end, #stats{cbs = Cbs}, Opts).
+                new_opts(Opt,S)
+        end, #stats{cbs = Cbs}, Opts).
 
 new_opts({min, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmin = V};
 new_opts({max, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmax = V};
-new_opts(gmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{gmean,  {fun update_gmean/3,  0}}|Cbs]};
+new_opts(gmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{gmean,  {fun update_gmean/3, 0}}|Cbs]};
+new_opts(hmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{hmean,  {fun update_hmean/3, 0}}|Cbs]};
 new_opts(_, S) -> S.
 
 -spec add([number()] | number(), stats()) -> stats().
 
-add(V, #stats{ lmin = L, lmax = U } = S) when is_number(V), 
-	(L =:= ?nolimit orelse V >= L),
-	(U =:= ?nolimit orelse V =< U) ->
+add(V, #stats{lmin = L, lmax = U} = S) when is_number(V) andalso
+	                                        ((L =:= ?nolimit orelse V >= L) andalso
+                                             (U =:= ?nolimit orelse V =< U)) ->
     update(V, S);
 add([V|Vs], S) -> add(Vs, add(V,S));
 add(_, S) -> S.
 
-update(V, #stats{ n = 0, cbs = Cbs } = S) ->
+update(V, #stats{n = 0, cbs = Cbs} = S) ->
     S#stats{
-	min    = V,
-	max    = V,
-	n      = 1,
-	sum    = V,
-	sumsq  = V*V,
-	cbs    = update_cbs(V, S, Cbs)
+        min    = V,
+        max    = V,
+        n      = 1,
+        sum    = V,
+        sumsq  = V*V,
+        cbs    = update_cbs(V, S, Cbs)
     };
 update(V, #stats{ n = N, cbs = Cbs } = S) ->
     S#stats{
-	min    = erlang:min(V, S#stats.min),
-	max    = erlang:max(V, S#stats.max),
-	n      = 1   + N,
-	sum    = V   + S#stats.sum,
-	sumsq  = V*V + S#stats.sumsq,
-	cbs    = update_cbs(V, S, Cbs)
+        min    = erlang:min(V, S#stats.min),
+        max    = erlang:max(V, S#stats.max),
+        n      = 1   + N,
+        sum    = V   + S#stats.sum,
+        sumsq  = V*V + S#stats.sumsq,
+        cbs    = update_cbs(V, S, Cbs)
     }.
 
 update_cbs(V, S, [{K,{Fun, Data}}|Cbs]) ->
     [{K, {Fun, Fun(V, S, Data)}}|update_cbs(V, S, Cbs)];
 update_cbs(_, _, []) -> [].
 
-update_moment(V, #stats{ n = N1 }, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 } = Ms) ->
+update_moment(V, #stats{n = N1}, #moment{m1 = M1, m2 = M2, m3 = M3, m4 = M4} = Ms) ->
     N = N1 + 1,
     Delta = V - M1,
     DeltaN  = Delta / N,
@@ -137,14 +128,17 @@ update_moment(V, #stats{ n = N1 }, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 }
     Term1 = Delta * DeltaN * N1,
 
     Ms#moment{
-	m1 = M1 + DeltaN,
-	m2 = M2 + Term1,
-	m3 = M3 + Term1 * DeltaN * (N - 2) - 3 * DeltaN * M2,
-	m4 = M4 + Term1 * DeltaN2 * (N*N - 3*N + 3) + 6 * DeltaN2 * M2 - 4 * DeltaN * M3
+        m1 = M1 + DeltaN,
+        m2 = M2 + Term1,
+        m3 = M3 + Term1 * DeltaN * (N - 2) - 3 * DeltaN * M2,
+        m4 = M4 + Term1 * DeltaN2 * (N*N - 3*N + 3) + 6 * DeltaN2 * M2 - 4 * DeltaN * M3
     }.
 
-update_gmean(V, _, S) ->
+update_gmean(V,_,S) ->
     S + math:log(V).
+update_hmean(V,_,S) ->
+    S + 1 / V.
+
 
 %%% vanilla implementation
 
@@ -157,7 +151,7 @@ mean(Vs)  -> tmean(Vs).
 tmean(#stats{ n = N, sum = Sum }) -> Sum/N;
 tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
 
--spec tmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
+-spec tmean([number()], {number() | 'inf',number() | 'inf'}) -> float().
 
 tmean(Vs, {L,U}) when is_list(Vs) ->
     tmean(add(Vs, new([{min,L},{max, U}]))).
@@ -174,6 +168,22 @@ gmean(Vs) when is_list(Vs) -> gmean(Vs, {?nolimit,?nolimit}).
 
 gmean(Vs,{L,U}) when is_list(Vs) ->
     gmean(add(Vs, new([{min,L},{max,U},gmean]))).
+
+%% Calculate n / (1/x1 + 1/x2 + .. + 1/xn)
+%% x1 .. Xn > 0.0 (positive real numbers)
+
+-spec hmean([number()]|stats()) -> float().
+
+hmean(#stats{n=N,cbs=Cbs}) ->
+    {_,S} = proplists:get_value(hmean,Cbs),
+    N/S;
+hmean(Vs) when is_list(Vs) -> hmean(Vs, {?nolimit, ?nolimit}).
+
+-spec hmean([number()], {number() | 'inf', number() | 'inf'}) -> float().
+
+hmean(Vs, {L,U}) when is_list(Vs) ->
+    hmean(add(Vs, new([{min,L},{max,U},hmean]))).
+
 
 -spec tmin([number()] | stats()) -> number().
 
@@ -265,19 +275,6 @@ moment(I, #stats{ n = N, cbs = Cbs}) when is_integer(I), I > 0, I < 5->
 moment(I, Vs) when is_list(Vs), is_integer(I) ->
     moment(I, add(Vs, new())).
 
-
-
--spec hmean([number()]) -> float().
-
-%% Calculate n / (1/x1 + 1/x2 + .. + 1/xn)
-%% x1 .. Xn > 0.0 (positive real numbers)
-hmean(Is) -> hmean(Is, 0, 0).
-hmean([I|Is], S, N) when is_number(I), I > 0 ->
-    hmean(Is, S + (1/I), N + 1);
-hmean([_|Is], S, N) ->
-    hmean(Is, S, N);
-hmean([], S, N) ->
-    N / S.
 
 
 -spec linregress([{X :: number(), Y :: number()}]) ->
