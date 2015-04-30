@@ -79,8 +79,12 @@ mean_stddev(_Config) ->
 
 gmean(_Config) ->
     Set = [1.8, 1.16666, 1.428571],
-    M   = matstat:gmean(Set),
-    ok  = ?equal(1.442249, M).
+    M1  = matstat:gmean(Set),
+    ok  = ?equal(1.442249, M1),
+    S   = lists:foldl(fun(V,Si) -> matstat:add(V,Si) end, matstat:new([gmean]), Set),
+    M2  = matstat:gmean(S),
+    ok  = ?equal(1.442249, M2),
+    ok.
 
 hmean(_Config) ->
     Set = [1,2,4],

@@ -53,7 +53,7 @@ I have two aspects of this:
 The continuous stats function set keeps a state for values added which may be queried.
 
  * `matstat:new() -> stats()` - Create a new stats state.
- * `matstat:new([{min | max, number()}]) -> stats()` - Create a new stats state.
+ * `matstat:new([{'min' | 'max', number()} | 'gmean']) -> stats()` - Create a new stats state.
  * `matstat:add([number()] | number(), stats()) -> stats()`.
 
 The following functions may also query the stats state.
@@ -61,6 +61,8 @@ The following functions may also query the stats state.
  *  Compute the trimmed mean
    * `tmean(stats() | [number()]) -> Mean :: float()`
    * `tmean([number()], {'inf' | L :: number(), 'inf' | U :: number()}) -> Mean :: float()`
+ *  Compute the geometric mean
+   * `gmean([number()]) -> GeometricMean :: float()`
  *  Compute the trimmed minimum
    * `tmin(stats() | [number()]) -> Minimum :: number()`
    * `tmin([number()], 'inf' | number()) -> Minimum :: number()`
@@ -88,7 +90,6 @@ The following functions may also query the stats state.
 #### Standalone for now ####
 
  * `cmedian([number()]) -> number()` - Returns the computed median value from a list of numbers
- * `gmean([number()]) -> Mean :: float()` - Compute the geometric mean along the specified axis.
  * `hmean([number()]) -> Mean :: float()` - Calculates the harmonic mean along the specified axis.
  * `linregress([{ X :: number(), Y :: number()}) -> {{Slope :: number(), Intercept :: number()}, RSq :: float()}` - Calculate a regression line
  * `itemfreq([term()]) -> [{term(), integer()}]` - Returns a 2D list of item frequencies. Highest frequency first.

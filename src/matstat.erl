@@ -81,17 +81,21 @@
 
 new() -> new([]).
 
--spec new(Opts :: [{atom(), term()}]) -> stats().
+-spec new(Opts) -> stats() when
+      Opts :: {'lmin', number()} |
+              {'lmax', number()} |
+	      'gmean'.
 
 new(Opts) ->
     Cbs = [{moment, {fun update_moment/3, #moment{}}}],
-    lists:foldl(fun({K,V},S) ->
-		new_opts(K,V,S)
-	end, #stats{ cbs = Cbs }, Opts).
+    lists:foldl(fun(Opt,S) ->
+			new_opts(Opt,S)
+		end, #stats{cbs = Cbs}, Opts).
 
-new_opts(min, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmin = V };
-new_opts(max, V, S) when is_number(V); V =:= ?nolimit -> S#stats{ lmax = V };
-new_opts(_, _, S) -> S.
+new_opts({min, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmin = V};
+new_opts({max, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmax = V};
+new_opts(gmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{gmean,  {fun update_gmean/3,  0}}|Cbs]};
+new_opts(_, S) -> S.
 
 -spec add([number()] | number(), stats()) -> stats().
 
@@ -139,6 +143,8 @@ update_moment(V, #stats{ n = N1 }, #moment{ m1 = M1, m2 = M2, m3 = M3, m4 = M4 }
 	m4 = M4 + Term1 * DeltaN2 * (N*N - 3*N + 3) + 6 * DeltaN2 * M2 - 4 * DeltaN * M3
     }.
 
+update_gmean(V, _, S) ->
+    S + math:log(V).
 
 %%% vanilla implementation
 
@@ -226,7 +232,7 @@ kurtosis(Vs, {L,U}) when is_list(Vs) ->
 
 -spec skewness(stats() | [number()]) -> float().
 
-skewness(#stats{ n = N } = S ) when N > 0 ->
+skewness(#stats{ n = N } = S) when N > 0 ->
     M2 = moment(2, S),
     M3 = moment(3, S),
     G1 = M3 / (M2 *math:sqrt(M2)), % true
@@ -247,12 +253,12 @@ moment(I, Vs) when is_list(Vs), is_integer(I) ->
     moment(I, add(Vs, new())).
 
 
-%% not in main stats
-%% should it be?
-
--spec gmean([number()]) -> float().
-
 %% Calculate nth root of (x1 * x2 * .. * xn)
+-spec gmean([number()] | stats()) -> float().
+
+gmean(#stats{n = N, cbs = Cbs}) when N > 0 ->
+    {_, SL} = proplists:get_value(gmean, Cbs),
+    math:exp(SL/N);
 gmean([I|Is]) when is_number(I) ->
     gmean(Is, I, 1).
 gmean([I|Is], P, N) when is_number(I) ->
