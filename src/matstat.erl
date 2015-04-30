@@ -162,6 +162,19 @@ tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
 tmean(Vs, {L,U}) when is_list(Vs) ->
     tmean(add(Vs, new([{min,L},{max, U}]))).
 
+%% Calculate nth root of (x1 * x2 * .. * xn)
+-spec gmean([number()] | stats()) -> float().
+
+gmean(#stats{n = N, cbs = Cbs}) when N > 0 ->
+    {_, SL} = proplists:get_value(gmean, Cbs),
+    math:exp(SL/N);
+gmean(Vs) when is_list(Vs) -> gmean(Vs, {?nolimit,?nolimit}).
+
+-spec gmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
+
+gmean(Vs,{L,U}) when is_list(Vs) ->
+    gmean(add(Vs, new([{min,L},{max,U},gmean]))).
+
 -spec tmin([number()] | stats()) -> number().
 
 tmin(#stats{ min = V }) -> V;
@@ -252,19 +265,6 @@ moment(I, #stats{ n = N, cbs = Cbs}) when is_integer(I), I > 0, I < 5->
 moment(I, Vs) when is_list(Vs), is_integer(I) ->
     moment(I, add(Vs, new())).
 
-
-%% Calculate nth root of (x1 * x2 * .. * xn)
--spec gmean([number()] | stats()) -> float().
-
-gmean(#stats{n = N, cbs = Cbs}) when N > 0 ->
-    {_, SL} = proplists:get_value(gmean, Cbs),
-    math:exp(SL/N);
-gmean([I|Is]) when is_number(I) ->
-    gmean(Is, I, 1).
-gmean([I|Is], P, N) when is_number(I) ->
-    gmean(Is, P*I, N + 1);
-gmean([], P, N) ->
-    math:pow(P, 1/N).
 
 
 -spec hmean([number()]) -> float().
