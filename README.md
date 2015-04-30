@@ -105,10 +105,9 @@ Function list from SciPy.stats Statistical Functions.
 Will Implement in Prio order:
 
  * `chisquare(f_obs[, f_exp, ddof])` - Calculates a one-way chi square test.
- * zmap(scores, compare[, axis, ddof]) - Calculates the relative z-scores.
- * zscore(a[, axis, ddof]) - Calculates the z score of each value in the sample, relative to the sample mean and standard deviation.
- * moment(a[, moment, axis]) - Calculates the nth moment about the mean for a sample.
- * spearmanr(a[, b, axis]) - Calculates a Spearman rank-order correlation coefficient and the p-value
+ * `zmap(scores, compare[, axis, ddof])` - Calculates the relative z-scores.
+ * `zscore(a[, axis, ddof])` - Calculates the z score of each value in the sample, relative to the sample mean and standard deviation.
+ * `spearmanr(a[, b, axis])` - Calculates a Spearman rank-order correlation coefficient and the p-value
 
 Still flaky about:
 
