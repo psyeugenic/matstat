@@ -14,22 +14,21 @@
 -export([init_per_suite/1, end_per_suite/1]).
 
 %% Test cases
--export([
-	mean_stddev/1,
-	mean/1,
-	tmin/1,tmax/1,
-	tstd/1, tvar/1,
-	tsem/1,
-	hmean/1,
-	gmean/1,
-	cmedian/1,
-	linregress/1,
-	itemfreq/1,
-	pearsonsr/1,
-	moment/1,
-	skewness/1,
-	kurtosis/1
-    ]).
+-export([mean_stddev/1,
+        mean/1,
+        tmin/1,tmax/1,
+        tstd/1, tvar/1,
+        tsem/1,
+        hmean/1,
+        gmean/1,
+        cmedian/1,
+        linregress/1,
+        itemfreq/1,
+        pearsonsr/1,
+        moment/1,
+        skewness/1,
+        kurtosis/1,
+        histogram/1]).
 
 init_per_suite(Config) when is_list(Config) ->
     Config.
@@ -37,21 +36,19 @@ init_per_suite(Config) when is_list(Config) ->
 end_per_suite(Config) when is_list(Config) ->
     ok.
 
-all() ->
-    [
-	mean, mean_stddev,
-	hmean, gmean,
-	tmin,tmax,
-	tvar, tstd,
-	tsem,
-	cmedian,
-	linregress,
-	itemfreq,
-	pearsonsr,
-	moment,
-	skewness,
-	kurtosis
-    ].
+all() -> [mean, mean_stddev,
+          hmean, gmean,
+          tmin,tmax,
+          tvar, tstd,
+          tsem,
+          cmedian,
+          linregress,
+          itemfreq,
+          pearsonsr,
+          moment,
+          skewness,
+          kurtosis,
+          histogram].
 
 -define(err, (0.005)).
 -define(equal(A,B), equal(A,B)).
@@ -153,8 +150,9 @@ cmedian(_Config) ->
 
 linregress(_Config) ->
     Set1 = [{95,214},{82,152},{90,156},{81,129},{99,254},{100,266},
-	{93,210},{95,204},{93,213},{87,150}],
-    {{Slope, Intercept}, R2} = matstat:linregress(Set1),
+            {93,210},{95,204},{93,213},{87,150}],
+    {{Slope, Intercept}, {R2,SD}} = matstat:linregress(Set1),
+    io:format("StdDev ~p~n", [SD]),
     ok   = ?equal(6.7175, Slope),
     ok   = ?equal(-419.85, Intercept),
     ok   = ?equal(0.89, R2),
@@ -212,5 +210,21 @@ kurtosis(_Config) ->
     ok   = ?equal(-1.2, matstat:kurtosis(Set1)),
     ok   = ?equal(-0.2091, matstat:kurtosis(Set2)),
     ok.
+
+
+histogram(_Config) ->
+    Set1 = lists:seq(1,10),
+    Set2 = [m(61,5),m(64,18),m(67,42),m(70,27),m(73,8)],
+    _ = matstat:histogram(Set1),
+    _ = matstat:histogram(Set2),
+    Set3 = lists:seq(11,20),
+    Set4 = lists:seq(21,30) ++ Set1 ++ Set3,
+    S1   = matstat:new([{histogram,11,20,3}]),
+    S2   = matstat:add(Set3,S1),
+    _    = matstat:histogram(S2),
+    S3   = matstat:add(Set4,S2),
+    _    = matstat:histogram(S3),
+    ok.
+
 
 m(V,N) -> lists:duplicate(N,V).

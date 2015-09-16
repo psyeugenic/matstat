@@ -1,6 +1,4 @@
 %%
-%% Copyright (C) 2012 Hapida AB
-%%
 %% File:    matstat.erl
 %% Author:  Björn-Egil Dahlberg
 %% Created: 2012-10-19
@@ -14,36 +12,33 @@
         add/2]).
 
 -export([msn/1,
-        mean/1,
-        divide/2,
-        divide/3,
-        mult/2,
-        mult/3,
-        cov/2,
-        corr/2]).
+         mean/1,
+         divide/2,
+         divide/3,
+         mult/2,
+         mult/3,
+         cov/2,
+         corr/2]).
 
 -export([tmean/1, tmean/2,
-        tmin/1, tmin/2,
-        tmax/1, tmax/2,
-        tvar/1, tvar/2,
-        tstd/1, tstd/2,
-        tsem/1, tsem/2,
-        gmean/1,
-        hmean/1,
-        cmedian/1,
-        linregress/1,
-        itemfreq/1,
-        pearsonsr/1]).
+         tmin/1, tmin/2,
+         tmax/1, tmax/2,
+         tvar/1, tvar/2,
+         tstd/1, tstd/2,
+         tsem/1, tsem/2,
+         gmean/1,
+         hmean/1,
+         cmedian/1,
+         linregress/1,
+         itemfreq/1,
+         pearsonsr/1]).
 
 -export([moment/2,
-        kurtosis/1,
-        skewness/1]).
+         kurtosis/1,
+         skewness/1]).
 
 -export([histogram/1, histogram/2,
-        histogram_new/3,
-        histogram_add/2,
-        histogram_property/1,
-        histogram_counts/1]).
+         histogram_property/1]).
 
 %%% stats implementation
 
@@ -57,13 +52,25 @@
 -record(stats, {
         lmin   = ?nolimit,
         lmax   = ?nolimit,
-        sum    = 0,
-        sumsq  = 0,
-        min    = 0,
-        max    = 0,
+        sum    = 0 :: number(),
+        sumsq  = 0 :: number(),
+        min    = 0 :: number(),
+        max    = 0 :: number(),
         cbs    = [],
-        n      = 0
+        n      = 0 :: non_neg_integer()
     }).
+
+-type histogram() :: term().
+
+-record(histogram, {
+        n     = 0 :: non_neg_integer(),    % number of values in bins
+        nbins = 0 :: non_neg_integer(),
+        width = 1 :: non_neg_integer(),
+        min   = none, % bin min
+        max   = none, % bin max
+        bins  = gb_trees:empty()
+    }).
+
 
 -type stats() :: term().
 
@@ -71,29 +78,31 @@
 
 new() -> new([]).
 
--spec new(Opts) -> stats() when
-      Opts :: {'lmin', number()} |
-              {'lmax', number()} |
-              'gmean'.
+-spec new([Opt]) -> stats() when
+      Opt :: {'min', number() | 'inf'} |
+             {'max', number() | 'inf'} |
+             {'histogram',number(),number(),number()} |
+              'gmean' | 'hmean'.
 
 new(Opts) ->
     Cbs = [{moment, {fun update_moment/3, #moment{}}}],
-    lists:foldl(fun(Opt,S) ->
-                new_opts(Opt,S)
-        end, #stats{cbs = Cbs}, Opts).
+    lists:foldl(fun(Opt,S) -> opts(Opt,S) end, #stats{cbs = Cbs}, Opts).
 
-new_opts({min, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmin = V};
-new_opts({max, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmax = V};
-new_opts(gmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{gmean,  {fun update_gmean/3, 0}}|Cbs]};
-new_opts(hmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{hmean,  {fun update_hmean/3, 0}}|Cbs]};
-new_opts(_, S) -> S.
+opts({min, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmin = V};
+opts({max, V}, S) when is_number(V); V =:= ?nolimit -> S#stats{lmax = V};
+opts(gmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{gmean, {fun update_gmean/3, 0}}|Cbs]};
+opts(hmean, #stats{cbs=Cbs}=S) -> S#stats{cbs=[{hmean, {fun update_hmean/3, 0}}|Cbs]};
+opts({histogram,Min,Max,N}, #stats{cbs=Cbs}=S) ->
+    S#stats{cbs=[{histogram, {fun update_histogram/3, histogram_state(Min,Max,N)}}|Cbs]};
+opts(_, S) -> S.
 
 -spec add([number()] | number(), stats()) -> stats().
 
-add(V, #stats{lmin = L, lmax = U} = S) when is_number(V) andalso
-	                                        ((L =:= ?nolimit orelse V >= L) andalso
-                                             (U =:= ?nolimit orelse V =< U)) ->
-    update(V, S);
+add(V, #stats{lmin = L, lmax = U} = S) when is_number(V) ->
+    if ((L =:= ?nolimit orelse V >= L) andalso
+        (U =:= ?nolimit orelse V =< U)) -> update(V, S);
+       true -> S
+    end;
 add([V|Vs], S) -> add(Vs, add(V,S));
 add(_, S) -> S.
 
@@ -142,13 +151,13 @@ update_hmean(V,_,S) ->
 
 %%% vanilla implementation
 
--spec mean([number()]) -> float().
+-spec mean([number()] | stats()) -> float().
 
 mean(Vs)  -> tmean(Vs).
 
 -spec tmean([number()] | stats()) -> float().
 
-tmean(#stats{ n = N, sum = Sum }) -> Sum/N;
+tmean(#stats{n = N, sum = Sum}) -> Sum/N;
 tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
 
 -spec tmean([number()], {number() | 'inf',number() | 'inf'}) -> float().
@@ -187,7 +196,7 @@ hmean(Vs, {L,U}) when is_list(Vs) ->
 
 -spec tmin([number()] | stats()) -> number().
 
-tmin(#stats{ min = V }) -> V;
+tmin(#stats{ min = V}) -> V;
 tmin(Vs) when is_list(Vs) -> tmin(Vs, ?nolimit).
 
 -spec tmin([number()], 'inf' | number()) -> number().
@@ -207,7 +216,7 @@ tmax(Vs, L) when is_list(Vs) ->
 
 -spec tvar([number()] | stats()) -> float().
 
-tvar(#stats{ n = N, sum = Sum, sumsq = SumSqr}) ->
+tvar(#stats{n = N, sum = Sum, sumsq = SumSqr}) ->
     (SumSqr - Sum*Sum/N)/(N - 1);
 tvar(Vs) when is_list(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
 
@@ -276,6 +285,70 @@ moment(I, Vs) when is_list(Vs), is_integer(I) ->
     moment(I, add(Vs, new())).
 
 
+%% histogram
+
+
+-spec histogram([number()], integer()) -> [{number(), integer()}].
+
+histogram(Vs, Nb) when is_integer(Nb) ->
+    {Min, Max, _N}= min_max_n(Vs),
+    histogram(add(Vs, new([{histogram,Min,Max,Nb}]))).
+
+-spec histogram([number()]) -> [{number(), integer()}].
+
+histogram([_|_]= Vs) ->
+    {Min, Max, N}= min_max_n(Vs),
+    Nb = if N > 4 -> trunc(math:sqrt(N)); true -> 2 end,
+    histogram(add(Vs, new([{histogram,Min,Max,Nb}])));
+histogram(#stats{cbs=Cbs}) ->
+    {_,#histogram{nbins = N, min = Min,
+               width = W, bins = Bins}} = proplists:get_value(histogram, Cbs),
+    histogram_counts(0, N, Min, W, Bins).
+
+histogram_counts(I, N, Min, W, Bins) when I < N ->
+    [{I*W + Min, histogram_count(I, Bins)}|histogram_counts(I + 1, N, Min, W, Bins)];
+histogram_counts(_, _, _, _, _) -> [].
+
+histogram_count(Bin, Bins) ->
+    case gb_trees:lookup(Bin, Bins) of
+        none -> 0;
+        {value, V} -> V
+    end.
+
+histogram_state(Min,Max,N) when is_number(Min), is_number(Max), is_integer(N), N > 1 ->
+    Width = histogram_bin_width(Min,Max,N),
+    #histogram{nbins = N, min = Min, max = Max, width = Width}.
+
+
+update_histogram(V, _Stats, #histogram{n = N, bins = Bins0} = Hi) ->
+    Ix = histogram_bin_idx(V, Hi),
+    Bins1  = case gb_trees:lookup(Ix, Bins0) of
+                 none       -> gb_trees:enter(Ix, 1, Bins0);
+                 {value, C} -> gb_trees:enter(Ix, C + 1, Bins0)
+             end,
+    Hi#histogram{n = N + 1, bins = Bins1}.
+
+histogram_bin_idx(V, #histogram{nbins = N, max = Max}) when V > Max -> N - 1;
+histogram_bin_idx(V, #histogram{min = Min}) when V < Min -> 0;
+histogram_bin_idx(V, #histogram{width = W, min = Min}) ->
+    erlang:trunc((V - Min)/W).
+
+-spec histogram_property(histogram()) ->
+    [{atom(), number()}].
+
+histogram_property(#histogram{n = N, width = W, min = Min, max = Max, nbins = Nbins}) ->
+    [{n, N}, {width, W}, {min, Min}, {max, Max}, {nbins, Nbins}].
+
+% try to keep width as integer if possible
+histogram_bin_width(Min, Max, Nb) when is_integer(Min), is_integer(Max), is_integer(Nb) ->
+    if (Max - Min + 1) rem Nb =:= 0 -> (Max - Min + 1) div Nb;
+       true -> (Max - Min + 1)/Nb
+    end;
+histogram_bin_width(Min, Max, Nb) ->
+    (Max - Min + 1)/Nb.
+
+
+%% not in main framework
 
 -spec linregress([{X :: number(), Y :: number()}]) ->
     {{Slope :: float(), Intercept :: float()}, {RSQ :: float(), StdDev :: float()}}.
@@ -290,12 +363,11 @@ linregress(Vs) ->
     % error estimation
     SSYY  = SumY2 - SumY*SumY/N,
     SSE   = SSYY - Slope*SSXY,
-    R2    = (SSYY - SSE)/SSYY,
-    _SD    = if
-	N > 2 -> math:sqrt(SSE/(N - 2));
-	true -> 0.0
-    end,
-    {{Slope, Incpt}, R2}.
+    RSQ   = (SSYY - SSE)/SSYY,
+    SD    = if N > 2 -> math:sqrt(SSE/(N - 2));
+              true -> 0.0
+           end,
+    {{Slope, Incpt}, {RSQ,SD}}.
 
 -spec pearsonsr([{X :: number(), Y :: number()}]) -> float().
     
@@ -346,90 +418,6 @@ itemfreq([V|Vs], T) ->
 itemfreq([], T) -> T.
 
 
-
--record(hist, {
-	n     = 0,    % number of values in bins
-	nbins = 0,
-	width = 1,
-	min   = none, % bin min
-	max   = none, % bin max
-	bins  = gb_trees:empty()
-    }).
-
--type histogram() :: term().
-
--spec histogram([number()]) -> [{number(), integer()}].
-
-histogram([_|_]= Vs) ->
-    {CVs, Min, Max, N}= min_max_n(Vs),
-    Nb = if
-	N > 4 -> trunc(math:sqrt(N));
-	true -> 2
-    end,
-    histogram_counts(histogram_add(CVs, histogram_new(Min, Max, Nb))).
-
--spec histogram([number()], integer()) -> [{number(), integer()}].
-
-histogram(Vs, Nb) when is_integer(Nb) ->
-    {CVs, Min, Max, _N}= min_max_n(Vs),
-    histogram_counts(histogram_add(CVs, histogram_new(Min, Max, Nb))).
-
--spec histogram_new(number(), number(), integer()) -> histogram().
-
-histogram_new(Min, Max, Nb) when is_number(Min), is_number(Max), is_integer(Nb), Nb > 1 ->
-    Width = histogram_bin_width(Min, Max, Nb),
-    #hist{ nbins = Nb, min = Min, max = Max, width = Width }.
-
--spec histogram_add(number() | [number()], histogram()) -> histogram().
-
-histogram_add(V, #hist{ n = N, bins = Bins0 } = Hi) when is_number(V) ->
-    BinIdx = histogram_bin_idx(V, Hi),
-    Bins1  = case gb_trees:lookup(BinIdx, Bins0) of
-	none       -> gb_trees:enter(BinIdx, 1, Bins0);
-	{value, C} -> gb_trees:enter(BinIdx, C + 1, Bins0)
-    end,
-    Hi#hist{ n = N + 1, bins = Bins1 };
-
-histogram_add([], Hs) -> Hs;
-histogram_add([V|Vs], Hs) ->
-    histogram_add(Vs, histogram_add(V, Hs)).
-
--spec histogram_property(histogram()) ->
-    [{atom(), number()}].
-
-histogram_property(#hist{ n = N, width = W, min = Min, max = Max, nbins = Nbins}) ->
-    [ {n, N}, {width, W}, {min, Min}, {max, Max}, {nbins, Nbins} ].
-
--spec histogram_counts(histogram()) -> [{number(), integer()}].
-
-histogram_counts(#hist{ nbins = N, min = Min, width = W, bins = Bins }) ->
-    histogram_counts(0, N, Min, W, Bins).
-
-histogram_counts(I, N, Min, W, Bins) when I < N ->
-    [{I*W + Min, histogram_count(I, Bins)}|histogram_counts(I + 1, N, Min, W, Bins)];
-histogram_counts(_, _, _, _, _) -> [].
-
-histogram_count(Bin, Bins) ->
-    case gb_trees:lookup(Bin, Bins) of
-	none -> 0;
-	{value, V} -> V
-    end.
-
-histogram_bin_idx(V, #hist{ nbins = N, max = Max }) when V > Max -> N - 1;
-histogram_bin_idx(V, #hist{ min = Min }) when V < Min -> 0;
-histogram_bin_idx(V, #hist{ width = W, min = Min }) ->
-    erlang:trunc((V - Min)/W).
-
-% try to keep width as integer if possible
-histogram_bin_width(Min, Max, Nb) when is_integer(Min), is_integer(Max), is_integer(Nb) ->
-    if
-	(Max - Min + 1) rem Nb =:= 0 -> (Max - Min + 1) div Nb;
-	true -> (Max - Min + 1)/Nb
-    end;
-histogram_bin_width(Min, Max, Nb) ->
-    (Max - Min + 1)/Nb.
-
-
 %% old thinking
 msn([])  -> {0, 0}; 
 msn([V]) -> {V, 0.0};
@@ -474,17 +462,22 @@ cov([X|Xs], Xm, [Y|Ys], Ym, S) ->
 
 %% aux
 
-min_max_n([V|Vs]) when is_number(V) -> min_max_n(Vs,[V],V,V,1);
-min_max_n([_|Vs]) -> min_max_n(Vs).
+min_max_n(Vs) ->
+    V = first_value(Vs),
+    min_max_n(Vs,{V,V,0}).
 
-min_max_n([V|Vs], Os, Min, Max, N) when is_number(V) ->
+first_value(V) when is_number(V) -> V;
+first_value([V|_]) -> first_value(V);
+first_value(V) -> erlang:error({min_max_n,V}).
+
+min_max_n([V|Vs], {Min, Max, N}) when is_number(V) ->
     Vmin = if V < Min -> V; true -> Min end,
     Vmax = if V > Max -> V; true -> Max end,
-    min_max_n(Vs, [V|Os], Vmin, Vmax, N + 1);
-min_max_n([_|Vs], Os, Min, Max, N) ->
-    min_max_n(Vs, Os, Min, Max, N);
-min_max_n([], Os, Min, Max, N) ->
-    {Os, Min, Max, N}.
+    min_max_n(Vs, {Vmin, Vmax, N + 1});
+min_max_n([V|Vs], MMN) ->
+    min_max_n(Vs,min_max_n(V, MMN));
+min_max_n([], MMN) ->
+    MMN.
 
 sum_x_y_xy_x2_y2_n(Vs) -> 
     sum_x_y_xy_x2_y2_n(Vs, 0, 0, 0, 0, 0, 0).
