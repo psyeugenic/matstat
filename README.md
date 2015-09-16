@@ -15,7 +15,7 @@ I have two aspects of this:
 
  * Statistics:
    * frequencies - `itemfreq/1`
-   * histogram - `histogram_new/3`, `histogram_add/2`, `histogram_counts/2`, `histogram_property/1`
+   * histogram - `histogram/1,2`, `histogram_property/1`
    * median - `cmedian/1`
    * mean - `tmean/1,2`, `gmean/1`, `hmean/1`
    * standard error - `tsem/1,2`
@@ -53,7 +53,7 @@ I have two aspects of this:
 The continuous stats function set keeps a state for values added which may be queried.
 
  * `matstat:new() -> stats()` - Create a new stats state.
- * `matstat:new([{'min' | 'max', number()} | 'gmean']) -> stats()` - Create a new stats state.
+ * `matstat:new([{'min' | 'max', number()} | 'gmean' | 'hmean']) -> stats()` - Create a new stats state.
  * `matstat:add([number()] | number(), stats()) -> stats()`.
 
 The following functions may also query the stats state.
