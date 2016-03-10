@@ -7,34 +7,27 @@
 %%
 
 -module(matstat_SUITE).
--include("test_server.hrl").
 
-%% common test
+-include_lib("common_test/include/ct.hrl").
+
 -export([all/0]).
--export([init_per_suite/1, end_per_suite/1]).
 
 %% Test cases
 -export([mean_stddev/1,
-        mean/1,
-        tmin/1,tmax/1,
-        tstd/1, tvar/1,
-        tsem/1,
-        hmean/1,
-        gmean/1,
-        cmedian/1,
-        linregress/1,
-        itemfreq/1,
-        pearsonsr/1,
-        moment/1,
-        skewness/1,
-        kurtosis/1,
-        histogram/1]).
-
-init_per_suite(Config) when is_list(Config) ->
-    Config.
-
-end_per_suite(Config) when is_list(Config) ->
-    ok.
+         mean/1,
+         tmin/1,tmax/1,
+         tstd/1, tvar/1,
+         tsem/1,
+         hmean/1,
+         gmean/1,
+         cmedian/1,
+         linregress/1,
+         itemfreq/1,
+         pearsonsr/1,
+         moment/1,
+         skewness/1,
+         kurtosis/1,
+         histogram/1]).
 
 all() -> [mean, mean_stddev,
           hmean, gmean,
@@ -60,13 +53,11 @@ equal(A,B) -> {A,B}.
 %% Tests
 %%----------------------------------------------------------------------
 
-mean(suite) -> [];
 mean(_Config) ->
     Set  = [70, 82, 76, 79, 83, 85, 72, 77],
     M    = matstat:mean(Set),
     ok   = ?equal(78, M).
 
-mean_stddev(suite) -> [];
 mean_stddev(_Config) ->
     Set   = [96, 104, 126, 134, 140],
     {M,S} = matstat:msn(Set),
@@ -181,7 +172,7 @@ skewness(_Config) ->
     ok.
 
 moment(_Config) ->
-    Set1 = [1,3,6,10],
+    %Set1 = [1,3,6,10],
     Set2 = [m(61,5),m(64,18),m(67,42),m(70,27),m(73,8)],
     ok   = ?equal(8.5275, matstat:moment(2, Set2)),
     ok   = ?equal(-2.6933, matstat:moment(3, Set2)),
