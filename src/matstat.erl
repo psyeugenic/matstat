@@ -8,8 +8,7 @@
 
 -define(nolimit, inf).
 
--export([new/0, new/1,
-        add/2]).
+-export([new/0, new/1, add/2]).
 
 -export([msn/1,
          mean/1,
@@ -42,6 +41,10 @@
 
 %%% stats implementation
 
+-type limit() :: number() | 'inf'.
+-type limit_min() :: limit().
+-type limit_max() :: limit().
+
 -record(moment, {
         m1 = 0,   % mean
         m2 = 0,
@@ -50,8 +53,8 @@
     }).
 
 -record(stats, {
-        lmin   = ?nolimit,
-        lmax   = ?nolimit,
+        lmin   = ?nolimit :: limit_min(),
+        lmax   = ?nolimit :: limit_max(),
         sum    = 0 :: number(),
         sumsq  = 0 :: number(),
         min    = 0 :: number(),
@@ -79,10 +82,10 @@
 new() -> new([]).
 
 -spec new([Opt]) -> stats() when
-      Opt :: {'min', number() | 'inf'} |
-             {'max', number() | 'inf'} |
-             {'histogram',number(),number(),number()} |
-              'gmean' | 'hmean'.
+      Opt :: {'min', limit_min()}
+           | {'max', limit_max()}
+           | {'histogram',number(),number(),number()}
+           | 'gmean' | 'hmean'.
 
 new(Opts) ->
     Cbs = [{moment, {fun update_moment/3, #moment{}}}],
@@ -160,7 +163,7 @@ mean(Vs)  -> tmean(Vs).
 tmean(#stats{n = N, sum = Sum}) -> Sum/N;
 tmean(Vs) when is_list(Vs) -> tmean(Vs, {?nolimit, ?nolimit}).
 
--spec tmean([number()], {number() | 'inf',number() | 'inf'}) -> float().
+-spec tmean([number()], {limit_min(),limit_max()}) -> float().
 
 tmean(Vs, {L,U}) when is_list(Vs) ->
     tmean(add(Vs, new([{min,L},{max, U}]))).
@@ -173,7 +176,7 @@ gmean(#stats{n = N, cbs = Cbs}) when N > 0 ->
     math:exp(SL/N);
 gmean(Vs) when is_list(Vs) -> gmean(Vs, {?nolimit,?nolimit}).
 
--spec gmean([number()], { number() | 'inf', number() | 'inf' }) -> float().
+-spec gmean([number()], {limit_min(), limit_max()}) -> float().
 
 gmean(Vs,{L,U}) when is_list(Vs) ->
     gmean(add(Vs, new([{min,L},{max,U},gmean]))).
@@ -188,7 +191,7 @@ hmean(#stats{n=N,cbs=Cbs}) ->
     N/S;
 hmean(Vs) when is_list(Vs) -> hmean(Vs, {?nolimit, ?nolimit}).
 
--spec hmean([number()], {number() | 'inf', number() | 'inf'}) -> float().
+-spec hmean([number()], {limit_min(), limit_max()}) -> float().
 
 hmean(Vs, {L,U}) when is_list(Vs) ->
     hmean(add(Vs, new([{min,L},{max,U},hmean]))).
@@ -196,20 +199,20 @@ hmean(Vs, {L,U}) when is_list(Vs) ->
 
 -spec tmin([number()] | stats()) -> number().
 
-tmin(#stats{ min = V}) -> V;
+tmin(#stats{min = V}) -> V;
 tmin(Vs) when is_list(Vs) -> tmin(Vs, ?nolimit).
 
--spec tmin([number()], 'inf' | number()) -> number().
+-spec tmin([number()], limit_min()) -> number().
 
 tmin(Vs, L) when is_list(Vs) ->
     tmin(add(Vs, new([{min, L}]))).
 
 -spec tmax([number()] | stats()) -> number().
 
-tmax(#stats{ max = V }) -> V;
+tmax(#stats{max = V }) -> V;
 tmax(Vs) when is_list(Vs) -> tmax(Vs, ?nolimit).
 
--spec tmax([number()], 'inf' | number()) -> number().
+-spec tmax([number()], limit_max()) -> number().
 
 tmax(Vs, L) when is_list(Vs) ->
     tmax(add(Vs, new([{max, L}]))).
@@ -220,7 +223,7 @@ tvar(#stats{n = N, sum = Sum, sumsq = SumSqr}) ->
     (SumSqr - Sum*Sum/N)/(N - 1);
 tvar(Vs) when is_list(Vs) -> tvar(Vs, {?nolimit, ?nolimit}).
 
--spec tvar([number()], {'inf' | number(), 'inf' | number()}) -> float().
+-spec tvar([number()], {limit_min(), limit_max()}) -> float().
 
 tvar(Vs, {L,U}) when is_list(Vs) ->
     tvar(add(Vs, new([{min,L},{max,U}]))).
@@ -230,7 +233,7 @@ tvar(Vs, {L,U}) when is_list(Vs) ->
 tstd(#stats{} = S) -> math:sqrt(tvar(S));
 tstd(Vs) when is_list(Vs) -> tstd(Vs, {?nolimit, ?nolimit}).
 
--spec tstd([number()], {'inf' | number(), 'inf' | number()}) -> float().
+-spec tstd([number()], {limit_min(), limit_max()}) -> float().
 
 tstd(Vs, {L,U}) when is_list(Vs) ->
     tstd(add(Vs, new([{min,L},{max,U}]))).
@@ -241,7 +244,7 @@ tsem(#stats{ n = N, sum = Sum, sumsq = SumSq }) ->
     math:sqrt(((SumSq - Sum*Sum/N)/(N - 1))/N);
 tsem(Vs) when is_list(Vs) -> tsem(Vs, {?nolimit, ?nolimit}).
 
--spec tsem([number()], {'inf' | number(), 'inf' | number()}) -> float().
+-spec tsem([number()], {limit_min(), limit_max()}) -> float().
 
 tsem(Vs, {L,U}) when is_list(Vs) ->
     tsem(add(Vs, new([{min,L},{max,U}]))).
@@ -257,7 +260,7 @@ kurtosis(#stats{ n = N } = S) when N > 0 ->
     ((N + 1)*G2 + 6)*(N - 1)/((N-2)*(N-3)); % sampled
 kurtosis(Vs) when is_list(Vs) -> kurtosis(Vs, {?nolimit, ?nolimit}).
 
--spec kurtosis([number()], {'inf' | number(), 'inf' | number()}) -> float().
+-spec kurtosis([number()], {limit_min(), limit_max()}) -> float().
 
 kurtosis(Vs, {L,U}) when is_list(Vs) ->
     kurtosis(add(Vs, new([{min,L},{max,U}]))).
@@ -271,7 +274,7 @@ skewness(#stats{ n = N } = S) when N > 0 ->
     math:sqrt(N*(N-1))/(N - 2)*G1; % sampled
 skewness(Vs) when is_list(Vs) -> skewness(Vs, {?nolimit, ?nolimit}).
 
--spec skewness([number()], {'inf' | number(), 'inf' | number()}) -> float().
+-spec skewness([number()], {limit_min(), limit_max()}) -> float().
 
 skewness(Vs, {L,U}) when is_list(Vs) ->
     skewness(add(Vs, new([{min,L},{max,U}]))).
