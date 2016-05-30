@@ -1,5 +1,5 @@
-rebar
+rebar3
 doc/
-ebin/*
-test/*.beam
-logs
+ebin/
+_build/
+rebar.lock
