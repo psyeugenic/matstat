@@ -398,8 +398,16 @@ cmedian(Is) ->
 	    I;
 	0 -> % even
 	    [I0,I1|_] = lists_tail(Ls, H - 1),
-	    (I0 + I1) / 2
+            maybe_int_div(I0+I1,2)
     end.
+
+maybe_int_div(T,N) when is_integer(T), is_integer(N) ->
+    case T rem N of
+        0 -> T div N;
+        _ -> T / N
+    end;
+maybe_int_div(T,N) ->
+    T / N.
 
 -spec itemfreq([term()]) -> [{term(), integer()}].
 

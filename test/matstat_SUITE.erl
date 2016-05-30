@@ -137,6 +137,11 @@ cmedian(_Config) ->
     ok   = ?equal(0.5, matstat:cmedian(Set2)),
     Set3 = [10,-9,8,-3,1,3,4,5,3],
     ok   = ?equal(3, matstat:cmedian(Set3)),
+    %% check integers
+    23   = matstat:cmedian([1,2,44,45]),
+    44   = matstat:cmedian([1,2,44,45,46]),
+    ok   = ?equal(23.5, matstat:cmedian([1,2,45,45])),
+    ok   = ?equal(23.5, matstat:cmedian([1,2.0,45,45])),
     ok.
 
 linregress(_Config) ->
