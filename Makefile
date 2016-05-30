@@ -1,6 +1,3 @@
-ERL ?= erl
-APP := matstat
-
 REBAR3_URL=https://s3.amazonaws.com/rebar3/rebar3
 
 ifeq ($(wildcard rebar3),rebar3)
@@ -36,10 +33,8 @@ distclean: clean
 docs:
 	@$(REBAR3) edoc
 
-
 test: 
 	@$(REBAR3) do ct, cover
-
 
 release: test
 	@$(REBAR3) release
